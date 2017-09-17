@@ -1,0 +1,6 @@
+[run]
+branch = True
+source = pystan
+
+[report]
+ignore_errors = True

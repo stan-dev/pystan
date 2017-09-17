@@ -1,0 +1,25 @@
+# The order of packages is significant, because pip processes them in the order
+# of appearance. Changing the order has an impact on the overall integration
+# process, which may cause wedges in the gate later.
+
+pycodestyle<2.4>=2.3 # MIT
+pyflakes<2,>=1.6.0 # MIT
+flake8<4,>=3.4 # MIT
+mccabe<1,>=0.6 # MIT
+
+pytest<4,>=3.0.7
+coverage>=4.0,!=4.4 # Apache-2.0
+sphinx>=1.6.2 # BSD
+
+# releasenotes
+reno>=1.8.0 # Apache-2.0
+
+# style checking
+pep8-naming>=0.4.1
+pydocstyle>=1.1.1
+
+# type checking
+mypy>=0.5
+
+# optional package, needed for testing
+pandas>=0.20

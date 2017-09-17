@@ -1,0 +1,3 @@
+pbr>=2.0 # Apache-2.0
+httpstan>0.2.3
+tqdm<5,>=4.14
