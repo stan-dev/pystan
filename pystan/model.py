@@ -77,8 +77,8 @@ class Model:
                                           arguments.lookup_default(arguments.Method['SAMPLE'], 'save_warmup'))
                 pbar_total = num_samples + num_warmup * int(save_warmup)
                 stan_output = []
-                async for payload_response in httpstan_helpers.post_aiter(host, port, path, payload):
-                    with tqdm.tqdm(total=pbar_total) as pbar:
+                with tqdm.tqdm(total=pbar_total) as pbar:
+                    async for payload_response in httpstan_helpers.post_aiter(host, port, path, payload):
                         stan_output.append(payload_response)
                         if payload_response['topic'] == 'SAMPLE':
                             pbar.update()
