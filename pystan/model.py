@@ -1,11 +1,11 @@
-import asyncio
+import json
 
 import httpstan.models
 import httpstan.services.arguments as arguments
+import requests
 import tqdm
 
 import pystan.fit
-import pystan.httpstan_helpers as httpstan_helpers
 
 
 class Model:
@@ -22,16 +22,13 @@ class Model:
         self.data = data or {}
         self.random_seed = random_seed
 
-        async def go():
-            host, port = 'localhost', 8080
-            path, payload = f'/v1/models/{self.model_id}/params', {'data': data}
-            response_payload = await httpstan_helpers.post(host, port, path, payload)
-            assert response_payload['id'] == self.model_id
-            params_list = response_payload['params']
-            assert len({param['name'] for param in params_list}) == len(params_list)
-            return params_list
+        host, port, path = 'localhost', 8080, f'/v1/models/{self.model_id}/params'
+        payload = {'data': data}
+        response_payload = requests.post(f'http://{host}:{port}{path}', json=payload).json()
+        assert response_payload.get('id') == self.model_id, response_payload
+        params_list = response_payload['params']
+        assert len({param['name'] for param in params_list}) == len(params_list)
 
-        params_list = asyncio.get_event_loop().run_until_complete(go())
         self.param_names, self.dims = zip(*((param['name'], param['dims']) for param in params_list))
         self.constrained_param_names = sum((param['constrained_names'] for param in params_list), [])
 
@@ -53,9 +50,8 @@ class Model:
         assert 'random_seed' not in kwargs, '`random_seed` is set in `compile`.'
         num_chains = kwargs.pop('num_chains', 1)
 
-        async def go(num_chains):
-            host, port = 'localhost', 8080
-            path = f'/v1/models/{self.model_id}/actions'
+        def go(num_chains):
+            host, port, path = 'localhost', 8080, f'/v1/models/{self.model_id}/actions'
             stan_outputs = []
             for chain in range(1, num_chains + 1):
                 payload = {
@@ -77,16 +73,19 @@ class Model:
                                           arguments.lookup_default(arguments.Method['SAMPLE'], 'save_warmup'))
                 pbar_total = num_samples + num_warmup * int(save_warmup)
                 stan_output = []
-                async for payload_response in httpstan_helpers.post_aiter(host, port, path, payload):
-                    with tqdm.tqdm(total=pbar_total) as pbar:
-                        stan_output.append(payload_response)
-                        if payload_response['topic'] == 'SAMPLE':
-                            pbar.update()
+
+                with tqdm.tqdm(total=pbar_total) as pbar:
+                    with requests.post(f'http://{host}:{port}{path}', json=payload, stream=True) as r:
+                        for line in r.iter_lines():
+                            payload_response = json.loads(line)
+                            stan_output.append(payload_response)
+                            if payload_response['topic'] == 'SAMPLE':
+                                pbar.update()
                 stan_outputs.append(stan_output)
             return pystan.fit.Fit(stan_outputs, num_chains, self.param_names, self.constrained_param_names, self.dims,
                                   num_warmup, num_samples, num_thin, save_warmup)
 
-        return asyncio.get_event_loop().run_until_complete(go(num_chains))
+        return go(num_chains)
 
 
 def compile(program_code, data=None, random_seed=None):
@@ -108,12 +107,9 @@ def compile(program_code, data=None, random_seed=None):
         variable names; see the Stan User's Guide for a complete list.
 
     """
-    async def go():
-        host, port = 'localhost', 8080
-        path = '/v1/models'
-        payload = {'program_code': program_code}
-        payload_response = await httpstan_helpers.post(host, port, path, payload)
-        return payload_response['id']
 
-    model_id = asyncio.get_event_loop().run_until_complete(go())
+    host, port, path = 'localhost', 8080, '/v1/models'
+    payload = {'program_code': program_code}
+    response_payload = requests.post(f'http://{host}:{port}{path}', data=payload).json()
+    model_id = response_payload['id']
     return Model(model_id, program_code, data, random_seed)
