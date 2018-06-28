@@ -1,0 +1,15 @@
+dist: trusty
+sudo: false
+language: python
+python:
+  - "3.6"
+env:
+  - TOXENV=flake8
+  - TOXENV=mypy
+  - TOXENV=py36
+before_install:
+  - python --version
+install:
+  - pip install tox
+script:
+  - travis_wait 60 tox
