@@ -5,6 +5,7 @@ python:
   - "3.6"
 env:
   - TOXENV=flake8
+  - TOXENV=format
   - TOXENV=mypy
   - TOXENV=py36
 before_install:
