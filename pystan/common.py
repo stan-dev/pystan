@@ -17,10 +17,9 @@ class ServerAddress(typing.NamedTuple):
 def httpstan_server():
     """Manage starting and stopping an httpstan web gateway."""
     try:
-        # TODO(AR): if the port is currently in use, another port should be used
-        host, port = "localhost", 8080
-        server = httpstan.main.Server(host=host, port=port)
+        server = httpstan.main.Server()
         server.start()
+        host, port = server.host, server.port
         retries = 10
         # if server is not ready (thread has not started)
         for _ in range(retries):
