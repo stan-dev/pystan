@@ -29,15 +29,15 @@ schools_data = {
 }
 
 
-def test_eight_schools_compile():
-    """Compile a simple model."""
-    posterior = pystan.compile(program_code, data=schools_data)
+def test_eight_schools_build():
+    """Build (compile) a simple model."""
+    posterior = pystan.build(program_code, data=schools_data)
     assert posterior is not None
 
 
 def test_eight_schools_sample():
     """Sample from a simple model."""
-    posterior = pystan.compile(program_code, data=schools_data)
+    posterior = pystan.build(program_code, data=schools_data)
     fit = posterior.sample(num_chains=1, num_samples=200, num_warmup=200)
     num_flat_params = schools_data["J"] * 2 + 2
     assert fit.values.shape == (1, 200, num_flat_params)

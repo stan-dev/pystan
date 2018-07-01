@@ -10,7 +10,7 @@ Reference
 =========
 
 .. automodule:: pystan
-   :members: compile
+   :members: build
 
 .. automodule:: pystan.model
    :members: Model
