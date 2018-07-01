@@ -11,14 +11,14 @@ def test_vector_params():
           beta ~ normal(0, 1);
         }
     """
-    posterior = pystan.compile(program_code, data={})
+    posterior = pystan.build(program_code)
     fit = posterior.sample()
     df = fit.to_frame()
     assert all(df.columns == ["beta.1", "beta.2", "beta.3"])
     assert len(df["beta.1"]) > 100
 
 
-def test_matrix_params_compile():
+def test_matrix_params_build():
     """Sample from a program with matrix-valued params."""
     program_code = """
         data {
@@ -35,7 +35,7 @@ def test_matrix_params_compile():
         }
     """
     data = {"K": 9, "D": 5}
-    posterior = pystan.compile(program_code, data=data)
+    posterior = pystan.build(program_code, data=data)
     assert posterior is not None
 
 
@@ -56,7 +56,7 @@ def test_matrix_params_sample():
         }
     """
     data = {"K": 9, "D": 5}
-    posterior = pystan.compile(program_code, data=data)
+    posterior = pystan.build(program_code, data=data)
     fit = posterior.sample()
     df = fit.to_frame()
     assert len(df.columns) == data["K"] * data["D"]

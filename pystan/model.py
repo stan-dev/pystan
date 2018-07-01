@@ -2,11 +2,11 @@ import concurrent.futures
 import json
 import typing
 
+import httpstan.models
+import httpstan.services.arguments as arguments
 import requests
 import tqdm
 
-import httpstan.models
-import httpstan.services.arguments as arguments
 import pystan.common
 import pystan.fit
 
@@ -14,7 +14,7 @@ import pystan.fit
 class Model:
     """Stores data associated with and proxies calls to a Stan model.
 
-    Returned by `compile`. Users will not instantiate this class directly.
+    Returned by `build`. Users will not instantiate this class directly.
 
     """
 
@@ -52,8 +52,8 @@ class Model:
         """
         assert isinstance(self.data, dict)
         assert "chain" not in kwargs, "`chain` id is set automatically."
-        assert "data" not in kwargs, "`data` is set in `compile`."
-        assert "random_seed" not in kwargs, "`random_seed` is set in `compile`."
+        assert "data" not in kwargs, "`data` is set in `build`."
+        assert "random_seed" not in kwargs, "`random_seed` is set in `build`."
         num_chains = kwargs.pop("num_chains", 1)
 
         with pystan.common.httpstan_server() as server:
@@ -126,8 +126,8 @@ class Model:
         )
 
 
-def compile(program_code, data=None, random_seed=None):
-    """Compile a Stan program.
+def build(program_code, data=None, random_seed=None):
+    """Build (compile) a Stan program.
 
     Arguments:
         program_code (str): Stan program code describing a Stan model.

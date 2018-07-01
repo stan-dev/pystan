@@ -50,7 +50,7 @@ coaching effects from eight schools. For simplicity, we call this example
             'y': [28,  8, -3,  7, -1,  1, 18, 12],
             'sigma': [15, 10, 16, 11,  9, 11, 10, 18]}
 
-    posterior = pystan.compile(program_code, data=data)
+    posterior = pystan.build(program_code, data=data)
     fit = posterior.sample(num_chains=4, num_samples=1000)
     df = fit.to_frame()  # yields a pandas `DataFrame`
 
