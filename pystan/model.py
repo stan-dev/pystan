@@ -2,11 +2,11 @@ import concurrent.futures
 import json
 import typing
 
-import httpstan.models
-import httpstan.services.arguments as arguments
 import requests
 import tqdm
 
+import httpstan.models
+import httpstan.services.arguments as arguments
 import pystan.common
 import pystan.fit
 
@@ -151,7 +151,15 @@ def build(program_code, data=None, random_seed=None):
         host, port = server.host, server.port
 
         path, payload = "/v1/models", {"program_code": program_code}
-        response_payload = requests.post(f"http://{host}:{port}{path}", data=payload).json()
+        response = requests.post(f"http://{host}:{port}{path}", data=payload)
+        if response.status_code != 200:
+            response_payload = response.json()
+            if response_payload["type"] == "ValueError":
+                exception = ValueError(response_payload["message"])
+            else:
+                exception = RuntimeError(response_payload["message"])
+            raise exception
+        response_payload = response.json()
         model_id = response_payload["id"]
 
         path, payload = f"/v1/models/{model_id}/params", {"data": data}
