@@ -62,7 +62,7 @@ class Model:
             stan_outputs = [[] for _ in range(num_chains)]
             payloads = []
             for chain in range(1, num_chains + 1):
-                payload = {"type": "stan::services::sample::hmc_nuts_diag_e"}
+                payload = {"type": "stan::services::sample::hmc_nuts_diag_e_adapt"}
                 payload.update(kwargs)
                 payload["chain"] = chain
                 payload["data"] = self.data
