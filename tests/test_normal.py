@@ -10,14 +10,14 @@ def test_normal_build():
 
 def test_normal_sample():
     """Sample from normal distribution."""
-    program_code = "parameters {real y;} model {y ~ normal(0,1);}"
+    program_code = "parameters {real y;} model {y ~ normal(0, 0.0001);}"
     posterior = pystan.build(program_code)
     assert posterior is not None
     fit = posterior.sample()
     assert fit.values.shape == (1, 1000, 1)  # 1 chain, n samples, 1 param
     df = fit.to_frame()
     assert len(df["y"]) == 1000
-    assert -5 < df["y"].mean() < 5
+    assert -0.01 < df["y"].mean() < 0.01
 
 
 def test_normal_sample_chains():
