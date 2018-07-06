@@ -25,10 +25,10 @@ def test_normal_sample_chains():
     program_code = "parameters {real y;} model {y ~ normal(0,1);}"
     posterior = pystan.build(program_code)
     assert posterior is not None
-    fit = posterior.sample(num_chains=2)
-    assert fit.values.shape == (2, 1000, 1)  # 1 chain, n samples, 1 param
+    fit = posterior.sample(num_chains=3)
+    assert fit.values.shape == (1, 1000, 3)  # 1 param, n samples, 3 chains
     df = fit.to_frame()
-    assert len(df["y"]) == 2000
+    assert len(df["y"]) == 3000
     assert -5 < df["y"].mean() < 5
 
 

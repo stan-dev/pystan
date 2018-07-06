@@ -50,29 +50,28 @@ class Fit:
             self.num_samples + self.num_warmup * self.save_warmup
         ) // self.num_thin
         # order is 'F' for 'Fortran', column-major order
-        self._draws = np.empty((num_chains, num_samples_saved, num_params), order="F")
+        self._draws = np.empty((num_params, num_samples_saved, num_chains), order="F")
 
         for chain_index, stan_output in zip(range(self.num_chains), self.stan_outputs):
             draw_index = 0
             for entry in stan_output:
                 if entry["topic"] == "SAMPLE":
+                    draw = []
                     # Check for a sample message which is mixed together with
                     # proper parameter samples.  Planned changes in the services
                     # API may make this check unnecessary.
-                    if "" in entry["feature"]:
+                    if entry["feature"] and entry["feature"][0].get("name") is None:
                         continue
 
-                    draw = []
-                    for key in entry["feature"].keys():
+                    for value_wrapped in entry["feature"]:
                         # for now, skip things such as lp__, stepsize__
-                        if key.endswith("__"):
+                        if value_wrapped["name"].endswith("__"):
                             continue
-                        value_wrapped = entry["feature"][key]
                         kind = "doubleList" if "doubleList" in value_wrapped else "intList"
                         # extract int or double depending on 'kind'
                         value = value_wrapped[kind]["value"].pop()
                         draw.append(value)
-                    self._draws[chain_index, draw_index, :] = draw
+                    self._draws[:, draw_index, chain_index] = draw
                     draw_index += 1
             assert draw_index == num_samples_saved
         # set draws array to read-only, also indicates we are finished
@@ -110,3 +109,54 @@ class Fit:
     @property
     def _finished(self):
         return not self._draws.flags["WRITEABLE"]
+
+    def __getitem__(self, param):
+        """Returns array with shape (stan_dimensions, num_chains * num_samples)"""
+        if not self._finished:
+            raise RuntimeError("Still collecting draws for fit.")
+        assert param in self.param_names, param
+        param_indexes = self._parameter_indexes(param)
+        param_dim = self.dims[self.param_names.index(param)]
+        # fmt: off
+        num_samples_saved = (self.num_samples + self.num_warmup * self.save_warmup) // self.num_thin
+        assert self.values.shape == (len(self.constrained_param_names), num_samples_saved, self.num_chains)
+        # fmt: on
+        # Stack chains together. Parameter is still stored flat.
+        view = self.values[param_indexes, :, :].reshape(len(param_indexes), -1).view()
+        assert view.shape == (len(param_indexes), num_samples_saved * self.num_chains)
+        # reshape must yield something with least two dimensions
+        reshape_args = param_dim + [-1] if param_dim else (1, -1)
+        # reshape, recover the shape of the stan parameter
+        return view.reshape(*reshape_args, order="F")
+
+    def _parameter_indexes(self, param: str) -> Sequence[int]:
+        """Obtain indexes for values associated with `param`.
+
+        A draw from the sampler is a flat vector of values. A multi-dimensional
+        variable will be stored in this vector in column-major order. This function
+        identifies the indices which allow us to extract values associated with a
+        parameter.
+
+        Parameters
+        ----------
+        param : Parameter of interest.
+
+        Returns
+        -------
+        Indexes associated with parameter.
+        """
+
+        # if `param` is a scalar, it will match one of the constrained_names
+        if param in self.constrained_param_names:
+            return (self.constrained_param_names.index(param),)
+
+        def calculate_starts(dims: Sequence[Sequence[int]]) -> Sequence[int]:
+            """Calculate starting indexes given dims."""
+            s = [np.prod(d) for d in dims]
+            starts = np.cumsum([0] + s)[: len(dims)]
+            return tuple(int(i) for i in starts)
+
+        starts = calculate_starts(self.dims)
+        names_index = self.param_names.index(param)
+        flat_param_count = np.prod(self.dims[names_index])
+        return tuple(starts[names_index] + offset for offset in range(flat_param_count))

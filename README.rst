@@ -52,7 +52,8 @@ coaching effects from eight schools. For simplicity, we call this example
 
     posterior = pystan.build(program_code, data=data)
     fit = posterior.sample(num_chains=4, num_samples=1000)
-    df = fit.to_frame()  # yields a pandas `DataFrame`
+    eta = fit["eta"]  # array with shape (8, 4000)
+    df = fit.to_frame()  # pandas `DataFrame`
 
 
 Installation
