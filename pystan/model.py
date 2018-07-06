@@ -26,7 +26,7 @@ class Model:
         param_names: typing.Tuple[str],
         constrained_param_names: typing.Tuple[str],
         dims: typing.Tuple[typing.Tuple[int]],
-        random_seed: int,
+        random_seed: typing.Optional[int],
     ) -> None:
         if model_id != httpstan.models.calculate_model_id(program_code):
             raise ValueError("`model_id` does not match `program_code`.")
@@ -66,6 +66,8 @@ class Model:
                 payload.update(kwargs)
                 payload["chain"] = chain
                 payload["data"] = self.data
+                if self.random_seed is not None:
+                    payload["random_seed"] = self.random_seed
 
                 # fit needs to know num_samples, num_warmup, num_thin, save_warmup
                 # progress bar needs to know some of these

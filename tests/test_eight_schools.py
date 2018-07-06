@@ -1,5 +1,6 @@
-import pystan
+import pytest
 
+import pystan
 
 program_code = """
     data {
@@ -29,18 +30,33 @@ schools_data = {
 }
 
 
-def test_eight_schools_build():
+@pytest.fixture(scope="module")
+def posterior():
     """Build (compile) a simple model."""
-    posterior = pystan.build(program_code, data=schools_data)
+    return pystan.build(program_code, data=schools_data)
+
+
+def test_eight_schools_build(posterior):
+    """Verify eight schools compiles."""
     assert posterior is not None
 
 
-def test_eight_schools_sample():
+def test_eight_schools_sample(posterior):
     """Sample from a simple model."""
-    posterior = pystan.build(program_code, data=schools_data)
-    fit = posterior.sample(num_chains=1, num_samples=200, num_warmup=200)
+    num_chains, num_samples = 2, 200
+    fit = posterior.sample(num_chains=num_chains, num_samples=num_samples, num_warmup=num_samples)
     num_flat_params = schools_data["J"] * 2 + 2
-    assert fit.values.shape == (1, 200, num_flat_params)
+    assert fit.values.shape == (num_flat_params, num_samples, num_chains)
     df = fit.to_frame()
     assert "eta.1" in df.columns
-    assert len(df["eta.1"]) == 200
+    assert len(df["eta.1"]) == num_samples * num_chains
+    assert fit["eta"].shape == (schools_data["J"], num_chains * num_samples)
+
+
+def test_eight_schools_parameter_indexes(posterior):
+    num_chains, num_samples = 1, 200
+    fit = posterior.sample(num_chains=num_chains, num_samples=num_samples, num_warmup=num_samples)
+    assert fit._parameter_indexes("mu") == (0,)
+    assert fit._parameter_indexes("tau") == (1,)
+    assert fit._parameter_indexes("eta") == (2, 3, 4, 5, 6, 7, 8, 9)
+    assert fit._parameter_indexes("theta") == (10, 11, 12, 13, 14, 15, 16, 17)
