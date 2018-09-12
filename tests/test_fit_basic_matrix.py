@@ -1,7 +1,7 @@
 """Test model with a matrix parameter."""
 import pytest
 
-import pystan
+import stan
 
 # individual draw should look like:
 # [ 0 5 0 0 ]
@@ -32,7 +32,7 @@ num_chains = 3
 
 @pytest.fixture(scope="module")
 def posterior():
-    return pystan.build(program_code, data={"K": K, "D": D})
+    return stan.build(program_code, data={"K": K, "D": D})
 
 
 @pytest.fixture(scope="module")

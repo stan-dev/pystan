@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 
-import pystan
+import stan
 
 program_code = """
     data {
@@ -25,7 +25,7 @@ num_chains = 3
 
 @pytest.fixture(scope="module")
 def posterior():
-    return pystan.build(program_code, data={"K": K})
+    return stan.build(program_code, data={"K": K})
 
 
 @pytest.fixture(scope="module")

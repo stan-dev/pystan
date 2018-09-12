@@ -1,6 +1,6 @@
 import pytest
 
-import pystan
+import stan
 
 program_code = """
     data {
@@ -33,7 +33,7 @@ schools_data = {
 @pytest.fixture(scope="module")
 def posterior():
     """Build (compile) a simple model."""
-    return pystan.build(program_code, data=schools_data)
+    return stan.build(program_code, data=schools_data)
 
 
 def test_eight_schools_build(posterior):
