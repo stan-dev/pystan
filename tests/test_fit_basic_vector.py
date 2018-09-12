@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 
-import pystan
+import stan
 
 # draws should look like (0, 5, 0)
 program_code = """
@@ -22,7 +22,7 @@ num_chains = 2
 
 @pytest.fixture(scope="module")
 def posterior():
-    return pystan.build(program_code, random_seed=123)
+    return stan.build(program_code, random_seed=123)
 
 
 @pytest.fixture(scope="module")

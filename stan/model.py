@@ -7,8 +7,8 @@ import tqdm
 
 import httpstan.models
 import httpstan.services.arguments as arguments
-import pystan.common
-import pystan.fit
+import stan.common
+import stan.fit
 
 
 class Model:
@@ -56,7 +56,7 @@ class Model:
         assert "random_seed" not in kwargs, "`random_seed` is set in `build`."
         num_chains = kwargs.pop("num_chains", 1)
 
-        with pystan.common.httpstan_server() as server:
+        with stan.common.httpstan_server() as server:
             host, port = server.host, server.port
             path = f"/v1/models/{self.model_id}/actions"
             stan_outputs = [[] for _ in range(num_chains)]
@@ -115,7 +115,7 @@ class Model:
 
             for stan_output in stan_outputs:
                 assert isinstance(stan_output, list), stan_output
-        return pystan.fit.Fit(
+        return stan.fit.Fit(
             stan_outputs,
             num_chains,
             self.param_names,
@@ -149,7 +149,7 @@ def build(program_code, data=None, random_seed=None):
     """
     if data is None:
         data = {}
-    with pystan.common.httpstan_server() as server:
+    with stan.common.httpstan_server() as server:
         host, port = server.host, server.port
 
         path, payload = "/v1/models", {"program_code": program_code}

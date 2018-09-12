@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 
-import pystan
+import stan
 
 program_code = "parameters {real y;} model {y ~ normal(10, 0.0001);}"
 num_samples = 1000
@@ -11,7 +11,7 @@ num_chains = 3
 
 @pytest.fixture(scope="module")
 def posterior():
-    return pystan.build(program_code)
+    return stan.build(program_code)
 
 
 @pytest.fixture(scope="module")

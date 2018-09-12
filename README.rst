@@ -23,7 +23,7 @@ coaching effects from eight schools. For simplicity, we call this example
 
 .. code-block:: python
 
-    import pystan
+    import stan
     program_code = """
     data {
       int<lower=0> J; // number of schools
@@ -50,7 +50,7 @@ coaching effects from eight schools. For simplicity, we call this example
             'y': [28,  8, -3,  7, -1,  1, 18, 12],
             'sigma': [15, 10, 16, 11,  9, 11, 10, 18]}
 
-    posterior = pystan.build(program_code, data=data)
+    posterior = stan.build(program_code, data=data)
     fit = posterior.sample(num_chains=4, num_samples=1000)
     eta = fit["eta"]  # array with shape (8, 4000)
     df = fit.to_frame()  # pandas `DataFrame`
