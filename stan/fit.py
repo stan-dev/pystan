@@ -46,9 +46,7 @@ class Fit:
             np.product(dims_ or 1) for dims_ in dims
         )  # if dims == [] then it is a scalar
         assert num_params == len(constrained_param_names), (num_params, constrained_param_names)
-        num_samples_saved = (
-            self.num_samples + self.num_warmup * self.save_warmup
-        ) // self.num_thin
+        num_samples_saved = (self.num_samples + self.num_warmup * self.save_warmup) // self.num_thin
         # order is 'F' for 'Fortran', column-major order
         self._draws = np.empty((num_params, num_samples_saved, num_chains), order="F")
 

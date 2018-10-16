@@ -72,8 +72,7 @@ class Model:
                 # fit needs to know num_samples, num_warmup, num_thin, save_warmup
                 # progress bar needs to know some of these
                 num_warmup = payload.get(
-                    "num_warmup",
-                    arguments.lookup_default(arguments.Method["SAMPLE"], "num_warmup"),
+                    "num_warmup", arguments.lookup_default(arguments.Method["SAMPLE"], "num_warmup")
                 )
                 num_samples = payload.get(
                     "num_samples",
