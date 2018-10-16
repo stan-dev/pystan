@@ -22,9 +22,7 @@ def test_stanc_no_such_distribution():
 
 def test_stanc_invalid_assignment():
     program_code = "parameters {real z;} model {z = 3;}"
-    with pytest.raises(
-        ValueError, match=r"Cannot assign to variable outside of declaration block"
-    ):
+    with pytest.raises(ValueError, match=r"Cannot assign to variable outside of declaration block"):
         stan.build(program_code=program_code)
 
 
