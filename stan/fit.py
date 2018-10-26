@@ -91,7 +91,7 @@ class Fit:
         """
         try:
             import pandas as pd
-        except ImportError as ex:
+        except ImportError:
             raise RuntimeError("The `to_frame` method requires the Python package `pandas`.")
         constrained_param_names = self.constrained_param_names
         df = pd.DataFrame(
