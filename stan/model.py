@@ -3,12 +3,15 @@ import json
 import typing
 
 import requests
-import tqdm
 
 import httpstan.models
 import httpstan.services.arguments as arguments
 import stan.common
 import stan.fit
+
+import google.protobuf.internal.decoder
+import httpstan.callbacks_writer_pb2 as callbacks_writer_pb2
+import google.protobuf.json_format as json_format
 
 
 class Model:
@@ -20,7 +23,7 @@ class Model:
 
     def __init__(
         self,
-        model_id: str,
+        model_name: str,
         program_code: str,
         data: dict,
         param_names: typing.Tuple[str],
@@ -28,9 +31,9 @@ class Model:
         dims: typing.Tuple[typing.Tuple[int]],
         random_seed: typing.Optional[int],
     ) -> None:
-        if model_id != httpstan.models.calculate_model_id(program_code):
-            raise ValueError("`model_id` does not match `program_code`.")
-        self.model_id = model_id
+        if model_name != httpstan.models.calculate_model_name(program_code):
+            raise ValueError("`model_name` does not match `program_code`.")
+        self.model_name = model_name
         self.program_code = program_code
         self.data = data or {}
         self.param_names = param_names
@@ -58,11 +61,10 @@ class Model:
 
         with stan.common.httpstan_server() as server:
             host, port = server.host, server.port
-            path = f"/v1/models/{self.model_id}/actions"
             stan_outputs = [[] for _ in range(num_chains)]
             payloads = []
             for chain in range(1, num_chains + 1):
-                payload = {"type": "stan::services::sample::hmc_nuts_diag_e_adapt"}
+                payload = {"function": "stan::services::sample::hmc_nuts_diag_e_adapt"}
                 payload.update(kwargs)
                 payload["chain"] = chain
                 payload["data"] = self.data
@@ -85,35 +87,41 @@ class Model:
                     "save_warmup",
                     arguments.lookup_default(arguments.Method["SAMPLE"], "save_warmup"),
                 )
-                pbar_total = num_samples + num_warmup * int(save_warmup)
                 payloads.append(payload)
 
-            def gather_draws(payload, pbar=None):
-                stan_output = []
-                r = requests.post(f"http://{host}:{port}{path}", json=payload, stream=True)
-                for line in r.iter_lines():
-                    payload_response = json.loads(line)
-                    stan_output.append(payload_response)
-                    if payload_response["topic"] == "SAMPLE":
-                        if pbar:
-                            pbar.update()
-                return stan_output
+            def extract_protobuf_messages(fit_bytes):
+                varint_decoder = google.protobuf.internal.decoder._DecodeVarint32
+                next_pos, pos = 0, 0
+                while pos < len(fit_bytes):
+                    msg = callbacks_writer_pb2.WriterMessage()
+                    next_pos, pos = varint_decoder(fit_bytes, pos)
+                    msg.ParseFromString(fit_bytes[pos : pos + next_pos])
+                    # TODO(AR): abandon JSON here, deal with protobuf msg directly
+                    yield json.loads(json_format.MessageToJson(msg))
+                    pos += next_pos
 
-            pbars = [
-                tqdm.tqdm(total=pbar_total, position=i, desc=f"Chain {i + 1}")
-                for i in range(num_chains)
-            ]
-            with concurrent.futures.ThreadPoolExecutor(num_chains) as executor:
-                futures = [
-                    executor.submit(gather_draws, payload, pbar)
-                    for payload, pbar in zip(payloads, pbars)
-                ]
-                stan_outputs = [fut.result() for fut in futures]
-            for pbar in pbars:
-                pbar.close()
+            def gather_draws(model_name, payload):
+                fits_url = f"http://{host}:{port}/v1/{model_name}/fits"
+                r = requests.post(fits_url, json=payload, stream=True)
+                assert r.status_code == 201, r.status_code
+                fit_name = r.json()["name"]
+                r = requests.get(f"http://{host}:{port}/v1/{fit_name}", json=payload, stream=True)
+                return tuple(extract_protobuf_messages(r.content))
 
+            stan_outputs = []
+            if num_chains == 1:
+                # do not use threading if we do not have to
+                stan_outputs.append(gather_draws(self.model_name, payload))
+            else:
+                with concurrent.futures.ThreadPoolExecutor(num_chains) as executor:
+                    future_to_pbar = {
+                        executor.submit(gather_draws, self.model_name, payload): None
+                        for payload in payloads
+                    }
+                    for fut in concurrent.futures.as_completed(future_to_pbar):
+                        stan_outputs.append(fut.result())
             for stan_output in stan_outputs:
-                assert isinstance(stan_output, list), stan_output
+                assert isinstance(stan_output, tuple), stan_output
         return stan.fit.Fit(
             stan_outputs,
             num_chains,
@@ -153,19 +161,17 @@ def build(program_code, data=None, random_seed=None):
 
         path, payload = "/v1/models", {"program_code": program_code}
         response = requests.post(f"http://{host}:{port}{path}", data=payload)
-        if response.status_code != 200:
+        if response.status_code != 201:
             response_payload = response.json()
-            if response_payload["type"] == "ValueError":
-                exception = ValueError(response_payload["message"])
-            else:
-                exception = RuntimeError(response_payload["message"])
-            raise exception
+            assert "error" in response_payload, response_payload
+            message = response_payload["error"]["message"]
+            raise RuntimeError(message)
         response_payload = response.json()
-        model_id = response_payload["id"]
+        model_name = response_payload["name"]
 
-        path, payload = f"/v1/models/{model_id}/params", {"data": data}
+        path, payload = f"/v1/{model_name}/params", {"data": data}
         response_payload = requests.post(f"http://{host}:{port}{path}", json=payload).json()
-        assert response_payload.get("id") == model_id, response_payload
+        assert response_payload.get("name") == model_name, response_payload
         params_list = response_payload["params"]
         assert len({param["name"] for param in params_list}) == len(params_list)
 
@@ -174,5 +180,5 @@ def build(program_code, data=None, random_seed=None):
             (tuple(param["constrained_names"]) for param in params_list), ()
         )
     return Model(
-        model_id, program_code, data, param_names, constrained_param_names, dims, random_seed
+        model_name, program_code, data, param_names, constrained_param_names, dims, random_seed
     )
