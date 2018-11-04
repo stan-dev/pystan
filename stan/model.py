@@ -103,6 +103,8 @@ class Model:
             def gather_draws(model_name, payload):
                 fits_url = f"http://{host}:{port}/v1/{model_name}/fits"
                 r = requests.post(fits_url, json=payload, stream=True)
+                if r.status_code != 201:
+                    raise RuntimeError(r.json()["error"]["message"])
                 assert r.status_code == 201, r.status_code
                 fit_name = r.json()["name"]
                 r = requests.get(f"http://{host}:{port}/v1/{fit_name}", json=payload, stream=True)
@@ -170,7 +172,10 @@ def build(program_code, data=None, random_seed=None):
         model_name = response_payload["name"]
 
         path, payload = f"/v1/{model_name}/params", {"data": data}
-        response_payload = requests.post(f"http://{host}:{port}{path}", json=payload).json()
+        response = requests.post(f"http://{host}:{port}{path}", json=payload)
+        response_payload = response.json()
+        if response.status_code != 200:
+            raise RuntimeError(response_payload["error"]["message"])
         assert response_payload.get("name") == model_name, response_payload
         params_list = response_payload["params"]
         assert len({param["name"] for param in params_list}) == len(params_list)
