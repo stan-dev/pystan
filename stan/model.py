@@ -10,8 +10,9 @@ import stan.common
 import stan.fit
 
 import google.protobuf.internal.decoder
-import httpstan.callbacks_writer_pb2 as callbacks_writer_pb2
 import google.protobuf.json_format as json_format
+import httpstan.callbacks_writer_pb2 as callbacks_writer_pb2
+import numpy as np
 
 
 class Model:
@@ -170,6 +171,11 @@ def build(program_code, data=None, random_seed=None):
             raise RuntimeError(message)
         response_payload = response.json()
         model_name = response_payload["name"]
+
+        # in `data`: convert numpy arrays to normal lists
+        for key, value in data.items():
+            if isinstance(value, np.ndarray):
+                data[key] = value.tolist()
 
         path, payload = f"/v1/{model_name}/params", {"data": data}
         response = requests.post(f"http://{host}:{port}{path}", json=payload)
