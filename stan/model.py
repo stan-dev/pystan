@@ -1,5 +1,5 @@
-import concurrent.futures
 import json
+import time
 import typing
 
 import requests
@@ -101,28 +101,28 @@ class Model:
                     yield json.loads(json_format.MessageToJson(msg))
                     pos += next_pos
 
-            def gather_draws(model_name, payload):
-                fits_url = f"http://{host}:{port}/v1/{model_name}/fits"
-                r = requests.post(fits_url, json=payload, stream=True)
+            fits_url = f"http://{host}:{port}/v1/{self.model_name}/fits"
+            operations = []
+            for payload in payloads:
+                r = requests.post(fits_url, json=payload)
                 if r.status_code != 201:
-                    raise RuntimeError(r.json()["error"]["message"])
+                    raise RuntimeError(r.json()["message"])
                 assert r.status_code == 201, r.status_code
-                fit_name = r.json()["name"]
-                r = requests.get(f"http://{host}:{port}/v1/{fit_name}", json=payload, stream=True)
-                return tuple(extract_protobuf_messages(r.content))
+                operations.append(r.json())
+
+            while not all(operation["done"] for operation in operations):
+                for operation in operations:
+                    operation_name = operation["name"]
+                    operation.update(
+                        requests.get(f"http://{host}:{port}/v1/{operation_name}").json()
+                    )
+                time.sleep(0.1)
 
             stan_outputs = []
-            if num_chains == 1:
-                # do not use threading if we do not have to
-                stan_outputs.append(gather_draws(self.model_name, payload))
-            else:
-                with concurrent.futures.ThreadPoolExecutor(num_chains) as executor:
-                    future_to_pbar = {
-                        executor.submit(gather_draws, self.model_name, payload): None
-                        for payload in payloads
-                    }
-                    for fut in concurrent.futures.as_completed(future_to_pbar):
-                        stan_outputs.append(fut.result())
+            for operation in operations:
+                fit_name = operation["metadata"]["fit"]["name"]
+                r = requests.get(f"http://{host}:{port}/v1/{fit_name}", json=payload)
+                stan_outputs.append(tuple(extract_protobuf_messages(r.content)))
             for stan_output in stan_outputs:
                 assert isinstance(stan_output, tuple), stan_output
         return stan.fit.Fit(
@@ -166,8 +166,8 @@ def build(program_code, data=None, random_seed=None):
         response = requests.post(f"http://{host}:{port}{path}", data=payload)
         if response.status_code != 201:
             response_payload = response.json()
-            assert "error" in response_payload, response_payload
-            message = response_payload["error"]["message"]
+            assert "message" in response_payload, response_payload
+            message = response_payload["message"]
             raise RuntimeError(message)
         response_payload = response.json()
         model_name = response_payload["name"]
@@ -181,7 +181,7 @@ def build(program_code, data=None, random_seed=None):
         response = requests.post(f"http://{host}:{port}{path}", json=payload)
         response_payload = response.json()
         if response.status_code != 200:
-            raise RuntimeError(response_payload["error"]["message"])
+            raise RuntimeError(response_payload["message"])
         assert response_payload.get("name") == model_name, response_payload
         params_list = response_payload["params"]
         assert len({param["name"] for param in params_list}) == len(params_list)
