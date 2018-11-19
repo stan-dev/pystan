@@ -1,4 +1,3 @@
-import json
 import time
 import typing
 
@@ -10,7 +9,6 @@ import stan.common
 import stan.fit
 
 import google.protobuf.internal.decoder
-import google.protobuf.json_format as json_format
 import httpstan.callbacks_writer_pb2 as callbacks_writer_pb2
 import numpy as np
 
@@ -90,6 +88,7 @@ class Model:
                 )
                 payloads.append(payload)
 
+            # WISHLIST(AR): rewriting this function in Cython (in httpstan) might speed things up
             def extract_protobuf_messages(fit_bytes):
                 varint_decoder = google.protobuf.internal.decoder._DecodeVarint32
                 next_pos, pos = 0, 0
@@ -97,8 +96,7 @@ class Model:
                     msg = callbacks_writer_pb2.WriterMessage()
                     next_pos, pos = varint_decoder(fit_bytes, pos)
                     msg.ParseFromString(fit_bytes[pos : pos + next_pos])
-                    # TODO(AR): abandon JSON here, deal with protobuf msg directly
-                    yield json.loads(json_format.MessageToJson(msg))
+                    yield msg
                     pos += next_pos
 
             fits_url = f"http://{host}:{port}/v1/{self.model_name}/fits"
