@@ -13,7 +13,7 @@ class Fit:
     methods.
 
     Attributes:
-        values: An ndarray with shape (num_chains, num_draws, num_flat_params)
+        values: An ndarray with shape (num_sample_and_sampler_params + num_flat_params, num_draws, num_chains)
 
     """
 
@@ -44,37 +44,61 @@ class Fit:
         self.num_warmup, self.num_samples = num_warmup, num_samples
         self.num_thin, self.save_warmup = num_thin, save_warmup
 
-        num_params = sum(
+        # `self.sample_and_sampler_param_names` collects the sample and sampler param names.
+        # - "sample params" include `lp__`, `accept_stat__`
+        # - "sampler params" include `stepsize__`, `treedepth__`, ...
+        # These names are gathered later in this function by inspecting the output from Stan.
+        self.sample_and_sampler_param_names: Sequence[str]
+
+        num_flat_params = sum(
             np.product(dims_ or 1) for dims_ in dims
         )  # if dims == [] then it is a scalar
-        assert num_params == len(constrained_param_names), (num_params, constrained_param_names)
+        assert num_flat_params == len(constrained_param_names)
         num_samples_saved = (self.num_samples + self.num_warmup * self.save_warmup) // self.num_thin
-        # order is 'F' for 'Fortran', column-major order
-        self._draws = np.empty((num_params, num_samples_saved, num_chains), order="F")
+
+        # self._draws holds all the draws. We cannot allocate it before looking at the draws
+        # because we do not know how many sampler-specific parameters are present. Later in this
+        # function we count them and only then allocate the array for `self._draws`.
+        self._draws: np.ndarray
 
         for chain_index, stan_output in zip(range(self.num_chains), self.stan_outputs):
             draw_index = 0
             for msg in stan_output:
                 if msg.topic == callbacks_writer_pb2.WriterMessage.Topic.Value("SAMPLE"):
-                    draw = []
-                    # Check for a sample message which is mixed together with
-                    # proper parameter samples.  Planned changes in the services
-                    # API may make this check unnecessary.
+                    # Ignore sample message which is mixed together with proper draws.
                     if msg.feature and msg.feature[0].name == "":
                         continue
-                    for feature in msg.feature:
-                        # for now, skip things such as lp__, stepsize__
-                        if feature.name.endswith("__"):
-                            continue
-                        draw.append(
-                            feature.double_list.value.pop()
-                            if feature.HasField("double_list")
-                            else feature.int_list.value.pop()
+
+                    draw_row = []  # a "row" of values from a single draw from Stan C++
+
+                    # for the first draw: collect sample and sampler parameter names.
+                    if not hasattr(self, "_draws"):
+                        feature_names = tuple(fea.name for fea in msg.feature)
+                        self.sample_and_sampler_param_names = tuple(
+                            name for name in feature_names if name.endswith("__")
                         )
-                    self._draws[:, draw_index, chain_index] = draw
+                        num_rows = len(self.sample_and_sampler_param_names) + num_flat_params
+                        # column-major order ("F") aligns with how the draws are stored (in cols).
+                        self._draws = np.empty((num_rows, num_samples_saved, num_chains), order="F")
+                        # rudimentary check of parameter order (sample & sampler params must be first)
+                        if num_flat_params and feature_names[-1].endswith("__"):
+                            raise RuntimeError(
+                                f"Expected last parameter name to be one declared in program code, found `{feature_names[-1]}`"
+                            )
+
+                    for fea in msg.feature:
+                        value = (
+                            fea.double_list.value.pop()
+                            if fea.HasField("double_list")
+                            else fea.int_list.value.pop()
+                        )
+                        draw_row.append(value)
+
+                    self._draws[:, draw_index, chain_index] = draw_row
                     draw_index += 1
             assert draw_index == num_samples_saved
         # set draws array to read-only, also indicates we are finished
+        assert self.sample_and_sampler_param_names and self._draws.size
         self._draws.flags["WRITEABLE"] = False
 
     def __contains__(self, key):
@@ -95,10 +119,9 @@ class Fit:
             import pandas as pd
         except ImportError:
             raise RuntimeError("The `to_frame` method requires the Python package `pandas`.")
-        constrained_param_names = self.constrained_param_names
-        df = pd.DataFrame(
-            self._draws.reshape(-1, len(constrained_param_names)), columns=constrained_param_names
-        )
+        columns = self.sample_and_sampler_param_names + self.constrained_param_names
+        assert len(self._draws) == len(columns)
+        df = pd.DataFrame(self._draws.reshape(len(columns), -1).T, columns=columns)
         df.index.name, df.columns.name = "draws", "parameters"
         return df
 
@@ -114,12 +137,16 @@ class Fit:
         """Returns array with shape (stan_dimensions, num_chains * num_samples)"""
         if not self._finished:
             raise RuntimeError("Still collecting draws for fit.")
-        assert param in self.param_names, param
+        assert param.endswith("__") or param in self.param_names, param
         param_indexes = self._parameter_indexes(param)
-        param_dim = self.dims[self.param_names.index(param)]
+        param_dim = (
+            []
+            if param in self.sample_and_sampler_param_names
+            else self.dims[self.param_names.index(param)]
+        )
         # fmt: off
         num_samples_saved = (self.num_samples + self.num_warmup * self.save_warmup) // self.num_thin
-        assert self.values.shape == (len(self.constrained_param_names), num_samples_saved, self.num_chains)
+        assert self.values.shape == (len(self.sample_and_sampler_param_names) + len(self.constrained_param_names), num_samples_saved, self.num_chains)
         # fmt: on
         # Stack chains together. Parameter is still stored flat.
         view = self.values[param_indexes, :, :].reshape(len(param_indexes), -1).view()
@@ -144,11 +171,20 @@ class Fit:
         Returns
         -------
         Indexes associated with parameter.
-        """
 
-        # if `param` is a scalar, it will match one of the constrained_names
+        Note
+        ----
+
+        This function assumes that parameters appearing in the program code follow
+        the sample and sampler parameters (e.g., ``lp__``, ``stepsize__``).
+        """
+        # if `param` is a scalar, it will match one of the constrained names or it will match a
+        # sample param name (e.g., `lp__`) or a sampler param name (e.g., `stepsize__`)
+        if param in self.sample_and_sampler_param_names:
+            return (self.sample_and_sampler_param_names.index(param),)
+        sample_and_sampler_params_offset = len(self.sample_and_sampler_param_names)
         if param in self.constrained_param_names:
-            return (self.constrained_param_names.index(param),)
+            return (sample_and_sampler_params_offset + self.constrained_param_names.index(param),)
 
         def calculate_starts(dims: Sequence[Sequence[int]]) -> Sequence[int]:
             """Calculate starting indexes given dims."""
@@ -156,7 +192,7 @@ class Fit:
             starts = np.cumsum([0] + s)[: len(dims)]
             return tuple(int(i) for i in starts)
 
-        starts = calculate_starts(self.dims)
+        starts = tuple(sample_and_sampler_params_offset + i for i in calculate_starts(self.dims))
         names_index = self.param_names.index(param)
         flat_param_count = np.prod(self.dims[names_index])
         return tuple(starts[names_index] + offset for offset in range(flat_param_count))

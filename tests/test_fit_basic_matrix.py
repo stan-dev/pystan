@@ -43,27 +43,29 @@ def fit(posterior):
 
 def test_fit_matrix_draw_order(fit):
     assert fit is not None
-    assert fit._draws.shape == (K * D, num_samples, num_chains)
-    assert len(fit._draws[:, 0, 0]) == K * D
-    assert fit._parameter_indexes("beta") == tuple(range(K * D))
+    offset = len(fit.sample_and_sampler_param_names)
+    assert fit._draws.shape == (offset + K * D, num_samples, num_chains)
+    assert len(fit._draws[:, 0, 0]) == offset + K * D
+    assert fit._parameter_indexes("beta") == tuple(offset + i for i in range(K * D))
 
 
 def test_fit_matrix_draw_contents(fit):
     assert fit is not None
-    assert fit._draws.shape == (K * D, num_samples, num_chains)
+    offset = len(fit.sample_and_sampler_param_names)
+    assert fit._draws.shape == (offset + K * D, num_samples, num_chains)
     chain = fit._draws[:, :, 0]
     # stored in column-major order
-    assert -1 < chain[0, :].mean() < 1
-    assert -1 < chain[1, :].mean() < 1
-    assert -1 < chain[2, :].mean() < 1
-    assert 4 < chain[3, :].mean() < 6
-    assert 4 < chain[4, :].mean() < 6
-    assert 4 < chain[5, :].mean() < 6
-    assert -1 < chain[6, :].mean() < 1
-    assert -1 < chain[7, :].mean() < 1
-    assert -1 < chain[8, :].mean() < 1
-    assert -1 < chain[9, :].mean() < 1
-    assert -1 < chain[10, :].mean() < 1
-    assert -1 < chain[11, :].mean() < 1
+    assert -1 < chain[offset + 0, :].mean() < 1
+    assert -1 < chain[offset + 1, :].mean() < 1
+    assert -1 < chain[offset + 2, :].mean() < 1
+    assert 4 < chain[offset + 3, :].mean() < 6
+    assert 4 < chain[offset + 4, :].mean() < 6
+    assert 4 < chain[offset + 5, :].mean() < 6
+    assert -1 < chain[offset + 6, :].mean() < 1
+    assert -1 < chain[offset + 7, :].mean() < 1
+    assert -1 < chain[offset + 8, :].mean() < 1
+    assert -1 < chain[offset + 9, :].mean() < 1
+    assert -1 < chain[offset + 10, :].mean() < 1
+    assert -1 < chain[offset + 11, :].mean() < 1
     beta = fit["beta"]
     assert beta.shape == (K, D, num_samples * num_chains)

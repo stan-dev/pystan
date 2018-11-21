@@ -14,7 +14,7 @@ def test_vector_params():
     posterior = stan.build(program_code)
     fit = posterior.sample()
     df = fit.to_frame()
-    assert all(df.columns == ["beta.1", "beta.2", "beta.3"])
+    assert all(df.columns[-3:] == ["beta.1", "beta.2", "beta.3"])
     assert len(df["beta.1"]) > 100
 
 
@@ -59,5 +59,5 @@ def test_matrix_params_sample():
     posterior = stan.build(program_code, data=data)
     fit = posterior.sample()
     df = fit.to_frame()
-    assert len(df.columns) == data["K"] * data["D"]
+    assert len(df.columns) == len(fit.sample_and_sampler_param_names) + data["K"] * data["D"]
     assert len(df["beta.1.1"]) > 100

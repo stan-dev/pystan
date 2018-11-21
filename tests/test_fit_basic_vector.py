@@ -33,18 +33,20 @@ def fit(posterior):
 
 def test_fit_vector_draw_order(fit):
     assert fit is not None
-    assert fit._draws.shape == (3, num_samples, num_chains)
-    assert len(fit._draws[:, 0, 0]) == 3
-    assert fit._parameter_indexes("beta") == tuple(range(3))
+    offset = len(fit.sample_and_sampler_param_names)
+    assert fit._draws.shape == (offset + 3, num_samples, num_chains)
+    assert len(fit._draws[:, 0, 0]) == offset + 3
+    assert fit._parameter_indexes("beta") == tuple(offset + i for i in range(3))
 
 
 def test_fit_vector_draw_contents(fit):
     assert fit is not None
-    assert fit._draws.shape == (3, num_samples, num_chains)
+    offset = len(fit.sample_and_sampler_param_names)
+    assert fit._draws.shape == (offset + 3, num_samples, num_chains)
     chain = fit._draws[:, :, 0]
-    assert -1 < chain[0, :].mean() < 1
-    assert 4 < chain[1, :].mean() < 6
-    assert -1 < chain[2, :].mean() < 1
+    assert -1 < chain[offset + 0, :].mean() < 1
+    assert 4 < chain[offset + 1, :].mean() < 6
+    assert -1 < chain[offset + 2, :].mean() < 1
     beta = fit["beta"]
     assert beta.shape == (3, num_samples * num_chains)
     beta_mean = np.mean(beta, axis=1)

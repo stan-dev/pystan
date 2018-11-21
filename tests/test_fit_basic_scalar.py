@@ -23,9 +23,10 @@ def fit(posterior):
 def test_fit_scalar_draw_order(fit):
     # not much to test here
     assert fit is not None
-    assert fit._draws.shape == (1, num_samples, num_chains)
-    assert len(fit._draws[:, 0, 0]) == 1
-    assert fit._parameter_indexes("y") == (0,)
+    offset = len(fit.sample_and_sampler_param_names)
+    assert fit._draws.shape == (offset + 1, num_samples, num_chains)
+    assert len(fit._draws[:, 0, 0]) == offset + 1
+    assert fit._parameter_indexes("y") == (offset + 0,)
 
 
 def test_fit_scalar_param(fit):
