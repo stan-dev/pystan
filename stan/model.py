@@ -118,8 +118,15 @@ class Model:
 
             stan_outputs = []
             for operation in operations:
-                fit_name = operation["metadata"]["fit"]["name"]
+                fit_name = operation["result"].get("name")
+                if fit_name is None:  # operation["result"] is an error
+                    assert not str(operation["result"]["code"]).startswith("2"), operation
+                    raise RuntimeError(operation["result"]["message"])
                 r = requests.get(f"http://{host}:{port}/v1/{fit_name}", json=payload)
+                if r.status_code != 200:
+                    response_payload = r.json()
+                    assert "message" in response_payload, response_payload
+                    raise RuntimeError(response_payload["message"])
                 stan_outputs.append(tuple(extract_protobuf_messages(r.content)))
             for stan_output in stan_outputs:
                 assert isinstance(stan_output, tuple), stan_output
