@@ -4,9 +4,6 @@ import pytest
 import stan
 
 
-program_code = "parameters {real y;} model {y ~ normal(0,1);}"
-
-
 program_code = """
     data {
     int<lower=0> N;
