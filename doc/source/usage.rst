@@ -1,6 +1,6 @@
-=================
- Getting Started
-=================
+=====
+Usage
+=====
 
 This is an example in Section 5.5 of Gelman et al (2003), which studied
 coaching effects from eight schools. For simplicity, we call this example
@@ -37,4 +37,17 @@ coaching effects from eight schools. For simplicity, we call this example
 
     posterior = stan.build(program_code, data=data)
     fit = posterior.sample(num_chains=4, num_samples=1000)
-    df = fit.to_frame()  # yields a pandas `DataFrame`
+    eta = fit["eta"]  # array with shape (8, 4000)
+    df = fit.to_frame()  # pandas `DataFrame`
+
+
+
+
+Reference
+=========
+
+.. automodule:: stan
+   :members: build
+
+.. automodule:: stan.model
+   :members: Model
