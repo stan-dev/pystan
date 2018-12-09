@@ -8,9 +8,11 @@ import httpstan.callbacks_writer_pb2 as callbacks_writer_pb2
 class Fit:
     """Stores draws from one or more chains.
 
-    The `values` attribute provides direct access to draws. More user-friendly
-    presentations of draws are available via the `to_frame` and `to_xarray`
+    The ``values`` attribute provides direct access to draws. More user-friendly
+    presentations of draws are available via the ``to_frame`` and ``to_xarray``
     methods.
+
+    Returned by methods of a ``Model``. Users will not instantiate this class directly.
 
     Attributes:
         values: An ndarray with shape (num_sample_and_sampler_params + num_flat_params, num_draws, num_chains)

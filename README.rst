@@ -14,6 +14,12 @@ and physical sciences, engineering, and business.
 
 * Open source software: ISC License
 
+Installation
+============
+
+There is no public release of PyStan 3. You should install from source.
+
+
 Getting Started
 ===============
 
@@ -54,9 +60,3 @@ coaching effects from eight schools. For simplicity, we call this example
     fit = posterior.sample(num_chains=4, num_samples=1000)
     eta = fit["eta"]  # array with shape (8, 4000)
     df = fit.to_frame()  # pandas `DataFrame`
-
-
-Installation
-============
-
-Install from source in a virtualenv.

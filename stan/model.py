@@ -16,7 +16,7 @@ import numpy as np
 class Model:
     """Stores data associated with and proxies calls to a Stan model.
 
-    Returned by `build`. Users will not instantiate this class directly.
+    Returned by ``build``. Users will not instantiate this class directly.
 
     """
 
@@ -43,7 +43,7 @@ class Model:
     def sample(self, **kwargs):
         """Draw samples from the model.
 
-        Parameters in `kwargs` will be passed to the default sample function in
+        Parameters in ``kwargs`` will be passed to the default sample function in
         stan::services. Parameter names are identical to those used in CmdStan.
         See the CmdStan documentation for parameter descriptions and default
         values.
