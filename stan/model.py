@@ -1,16 +1,50 @@
+import collections.abc
+import json
 import time
 import typing
 
 import requests
 
 import httpstan.models
+import httpstan.schemas
 import httpstan.services.arguments as arguments
+import httpstan.utils
 import stan.common
 import stan.fit
 
 import google.protobuf.internal.decoder
 import httpstan.callbacks_writer_pb2 as callbacks_writer_pb2
 import numpy as np
+
+
+def _ensure_json_serializable(data: dict) -> dict:
+    """Convert `data` with numpy.ndarray-like values to JSON serializable form.
+
+    Arguments:
+        data (dict): A Python dictionary or mapping providing the data for the
+            model. Variable names are the keys and the values are their
+            associated values. Default is an empty dictionary.
+
+    Returns:
+        dict: Data dictionary with JSON-serializable values.
+    """
+    for key, value in data.copy().items():
+        # first, see if the value is already JSON-serializable
+        try:
+            json.dumps(value)
+        except TypeError:
+            pass
+        else:
+            continue
+        # numpy scalar
+        if isinstance(value, np.ndarray) and value.ndim == 0:
+            data[key] = np.asarray(value).tolist()
+        # numpy.ndarray, pandas.Series, and anything similar
+        elif isinstance(value, collections.abc.Collection):
+            data[key] = np.asarray(value).tolist()
+        else:
+            raise TypeError(f"Value associated with variable `{key}` is not JSON serializable.")
+    return data
 
 
 class Model:
@@ -164,6 +198,7 @@ def build(program_code, data=None, random_seed=None):
     """
     if data is None:
         data = {}
+    data = _ensure_json_serializable(data)
     with stan.common.httpstan_server() as server:
         host, port = server.host, server.port
 
