@@ -1,3 +1,5 @@
+import numpy as np
+import pandas as pd
 import pytest
 
 import stan
@@ -39,6 +41,17 @@ def posterior():
 def test_eight_schools_build(posterior):
     """Verify eight schools compiles."""
     assert posterior is not None
+
+
+def test_eight_schools_build_numpy(posterior):
+    """Verify eight schools compiles."""
+    schools_data_alt = {
+        "J": 8,
+        "y": np.array([28, 8, -3, 7, -1, 1, 18, 12]),
+        "sigma": pd.Series([15, 10, 16, 11, 9, 11, 10, 18], name="sigma"),
+    }
+    posterior_alt = stan.build(program_code, data=schools_data_alt)
+    assert posterior_alt is not None
 
 
 def test_eight_schools_sample(posterior):
