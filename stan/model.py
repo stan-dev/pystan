@@ -1,4 +1,5 @@
 import collections.abc
+from copy import deepcopy
 import json
 import time
 import typing
@@ -198,6 +199,8 @@ def build(program_code, data=None, random_seed=None):
     """
     if data is None:
         data = {}
+    else:
+        data = deepcopy(data)
     data = _ensure_json_serializable(data)
     with stan.common.httpstan_server() as server:
         host, port = server.host, server.port
