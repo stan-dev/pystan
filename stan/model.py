@@ -1,5 +1,4 @@
 import collections.abc
-from copy import deepcopy
 import json
 import time
 import typing
@@ -18,8 +17,10 @@ import httpstan.callbacks_writer_pb2 as callbacks_writer_pb2
 import numpy as np
 
 
-def _ensure_json_serializable(data: dict) -> dict:
-    """Convert `data` with numpy.ndarray-like values to JSON serializable form.
+def _make_json_serializable(data: dict) -> dict:
+    """Convert `data` with numpy.ndarray-like values to JSON-serializable form.
+
+    Returns a new dictionary.
 
     Arguments:
         data (dict): A Python dictionary or mapping providing the data for the
@@ -27,9 +28,11 @@ def _ensure_json_serializable(data: dict) -> dict:
             associated values. Default is an empty dictionary.
 
     Returns:
-        dict: Data dictionary with JSON-serializable values.
+        dict: Copy of `data` dict with JSON-serializable values.
     """
-    for key, value in data.copy().items():
+    # no need for deep copy, we do not modify mutable items
+    data = data.copy()
+    for key, value in data.items():
         # first, see if the value is already JSON-serializable
         try:
             json.dumps(value)
@@ -199,9 +202,10 @@ def build(program_code, data=None, random_seed=None):
     """
     if data is None:
         data = {}
-    else:
-        data = deepcopy(data)
-    data = _ensure_json_serializable(data)
+    # _make_json_serializable returns a new dict, original `data` unchanged
+    data = _make_json_serializable(data)
+    assert all(not isinstance(value, np.ndarray) for value in data.values())
+
     with stan.common.httpstan_server() as server:
         host, port = server.host, server.port
 
@@ -214,11 +218,6 @@ def build(program_code, data=None, random_seed=None):
             raise RuntimeError(message)
         response_payload = response.json()
         model_name = response_payload["name"]
-
-        # in `data`: convert numpy arrays to normal lists
-        for key, value in data.items():
-            if isinstance(value, np.ndarray):
-                data[key] = value.tolist()
 
         path, payload = f"/v1/{model_name}/params", {"data": data}
         response = requests.post(f"http://{host}:{port}{path}", json=payload)
