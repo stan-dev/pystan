@@ -34,9 +34,8 @@ def fit(posterior):
 def test_bernoulli_sampling_error():
     bad_data = data.copy()
     del bad_data["N"]
-    with pytest.raises(RuntimeError) as exc_info:
+    with pytest.raises(RuntimeError, match=r"variable does not exist"):
         stan.build(program_code, data=bad_data)
-        assert "variable does not exist" in str(exc_info.value)
 
 
 def test_bernoulli_sampling_thin(posterior):
@@ -45,9 +44,8 @@ def test_bernoulli_sampling_thin(posterior):
 
 
 def test_bernoulli_sampling_invalid_argument(posterior):
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(TypeError, match=r"'float' object cannot be interpreted as an integer"):
         posterior.sample(num_thin=2.0)
-        assert "only integer values allowed" in str(exc_info.value)
 
 
 def test_bernoulli_sampling(fit):
