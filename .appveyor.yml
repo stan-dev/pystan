@@ -14,7 +14,7 @@ install:
   - conda info -a
   - conda create -q -n test-env python=%PYTHON_VERSION%
   - activate test-env
-  - conda install numpy cython scipy matplotlib pandas setuptools libpython m2w64-toolchain -c msys2 -q
+  - conda install numpy pandas setuptools libpython m2w64-toolchain -c msys2 -q
   - gcc --version
   # Install the build dependencies of the project.
   - pip install -q -r requirements.txt
