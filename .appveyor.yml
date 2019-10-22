@@ -1,0 +1,38 @@
+os: Visual Studio 2015
+platform: x64
+environment:
+  global:
+    MINICONDA: "C:\\Miniconda36-x64"
+  matrix:
+    - PYTHON_VERSION: 3.7
+
+install:
+  - set PATH=%MINICONDA%;%MINICONDA%\Scripts;%PATH%
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a
+  - conda create -q -n test-env python=%PYTHON_VERSION%
+  - activate test-env
+  - conda install numpy pandas setuptools libpython m2w64-toolchain -c msys2 -q
+  - gcc --version
+  # Install the build dependencies of the project.
+  - pip install -q -r requirements.txt
+  - pip install -q -r test-requirements.txt
+
+  - ECHO "Starting to build the wheel"
+  # build the wheel and install it
+  - python setup.py --quiet bdist_wheel
+  - ps: "ls dist"
+
+  - ECHO "Install generated wheel to test it"
+  # Install the generated wheel package to test it
+  - pip install -q --pre --no-index --find-links dist/ pystan
+
+# Not a .NET project, we build pystan in the install step instead
+build: false
+
+test_script:
+  - mkdir empty_folder
+  - cd empty_folder
+  - python -c "import stan"
+  - python -m pytest -v ../tests/test_build_program.py
