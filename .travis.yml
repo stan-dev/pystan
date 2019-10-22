@@ -1,12 +1,12 @@
 dist: xenial
 language: python
 python:
-  - "3.6"
+  - "3.7"
 env:
   - TOXENV=flake8
   - TOXENV=format
   - TOXENV=mypy
-  - TOXENV=py36
+  - TOXENV=py37
 before_install:
   - python --version
 install:
