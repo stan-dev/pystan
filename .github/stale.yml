@@ -1,1 +1,2 @@
-# use default settings
+daysUntilStale: 90
+staleLabel:
