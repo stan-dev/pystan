@@ -1,4 +1,5 @@
 pbr<6,>=5 # Apache-2.0
-httpstan<0.11,>=0.10
+aiohttp~=3.6
+httpstan~=1.0
 tqdm<5,>=4.14
 requests<3,>=2.18
