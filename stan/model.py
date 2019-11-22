@@ -210,7 +210,7 @@ def build(program_code, data=None, random_seed=None):
         host, port = server.host, server.port
 
         path, payload = "/v1/models", {"program_code": program_code}
-        response = requests.post(f"http://{host}:{port}{path}", data=payload)
+        response = requests.post(f"http://{host}:{port}{path}", json=payload)
         if response.status_code != 201:
             response_payload = response.json()
             assert "message" in response_payload, response_payload
