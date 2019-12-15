@@ -23,13 +23,18 @@ def httpstan_server():
     runner = aiohttp.web.AppRunner(httpstan.app.make_app())
     loop = asyncio.get_event_loop()
 
+    # After dropping Python 3.6, use `asyncio.run`
+    asyncio.get_event_loop().run_until_complete(runner.setup())
+    site = aiohttp.web.TCPSite(runner, host, port)
+
     try:
         # After dropping Python 3.6, use `asyncio.run`
-        asyncio.get_event_loop().run_until_complete(runner.setup())
-        site = aiohttp.web.TCPSite(runner, host, port)
-        # After dropping Python 3.6, use `asyncio.run`
         asyncio.get_event_loop().run_until_complete(site.start())
-        t = threading.Thread(target=loop.run_forever)
+    except OSError:  # port already in use
+        raise
+
+    t = threading.Thread(target=loop.run_forever)
+    try:
         # after this call, the event loop is running in thread which is not the main
         # thread. All interactions with the event loop must use thread-safe calls
         t.start()
