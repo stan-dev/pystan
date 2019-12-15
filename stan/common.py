@@ -1,6 +1,7 @@
 """Common routines"""
 import asyncio
 import contextlib
+import socket
 import threading
 import time
 import typing
@@ -19,7 +20,15 @@ class ServerAddress(typing.NamedTuple):
 @contextlib.contextmanager
 def httpstan_server():
     """Manage starting and stopping an httpstan web gateway."""
-    host, port = "127.0.0.1", 8080
+
+    def unused_port():
+        s = socket.socket()
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+        s.close()
+        return port
+
+    host, port = "127.0.0.1", unused_port()
     runner = aiohttp.web.AppRunner(httpstan.app.make_app())
     loop = asyncio.get_event_loop()
 
