@@ -16,7 +16,7 @@ def test_corr_matrix_build():
 
 def test_corr_matrix_sample():
     """Sample from a simple model."""
-    posterior = stan.build(program_code)
+    posterior = stan.build(program_code, random_seed=1)
     fit = posterior.sample(num_chains=2, num_samples=50)
     df = fit.to_frame()
     assert len(df["Lambda.1.1"]) == 100

@@ -95,6 +95,4 @@ def test_bernoulli_random_seed_same():
 
 def test_bernoulli_random_seed_different(posterior):
     fits = [stan.build(program_code, data=data, random_seed=seed).sample() for seed in (1, 2)]
-    for i, fit in enumerate(fits):
-        print(i, fit["theta"].ravel()[:10])
     assert not np.allclose(*[fit["theta"] for fit in fits])

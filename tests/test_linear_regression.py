@@ -32,7 +32,7 @@ data = {"N": n, "p": p, "x": X, "y": y}
 
 @pytest.fixture(scope="module")
 def posterior():
-    return stan.build(program_code, data=data)
+    return stan.build(program_code, data=data, random_seed=1)
 
 
 def test_linear_regression(posterior):
