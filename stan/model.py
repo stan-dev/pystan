@@ -96,15 +96,21 @@ class Model:
         assert "random_seed" not in kwargs, "`random_seed` is set in `build`."
         num_chains = kwargs.pop("num_chains", 1)
 
+        init = kwargs.pop("init", [dict() for _ in range(num_chains)])
+        if len(init) != num_chains:
+            raise ValueError("Initial values must be provided for each chain.")
+
         with stan.common.httpstan_server() as server:
             host, port = server.host, server.port
             stan_outputs = [[] for _ in range(num_chains)]
+
             payloads = []
             for chain in range(1, num_chains + 1):
                 payload = {"function": "stan::services::sample::hmc_nuts_diag_e_adapt"}
                 payload.update(kwargs)
                 payload["chain"] = chain
                 payload["data"] = self.data
+                payload["init"] = init.pop(0)
                 if self.random_seed is not None:
                     payload["random_seed"] = self.random_seed
 
@@ -141,7 +147,9 @@ class Model:
             operations = []
             for payload in payloads:
                 r = requests.post(fits_url, json=payload)
-                if r.status_code != 201:
+                if r.status_code == 422:
+                    raise ValueError(str(r.json()))
+                elif r.status_code != 201:
                     raise RuntimeError(r.json()["message"])
                 assert r.status_code == 201, r.status_code
                 operations.append(r.json())
