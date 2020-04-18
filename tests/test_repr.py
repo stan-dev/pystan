@@ -21,7 +21,7 @@ model {
 }
 """
 
-n, p = 10000, 3
+n, p = 50, 3  # smaller n  than in tests/test_linear_regression.py
 X = np.random.normal(size=(n, p))
 X = (X - np.mean(X, axis=0)) / np.std(X, ddof=1, axis=0, keepdims=True)
 beta_true = (1, 3, 5)
@@ -35,8 +35,7 @@ def posterior():
     return stan.build(program_code, data=data, random_seed=1)
 
 
-def test_linear_regression(posterior):
+def test_repr_fit(posterior):
     fit = posterior.sample(num_chains=4)
-    assert len(fit) == 2  # two parameters (beta, sigma)
-    assert 0 < fit["sigma"].mean() < 2
-    assert np.allclose(fit["beta"].mean(axis=1), beta_true, atol=0.05)
+    expected = """<stan.Fit>\nParameters:\n    beta: (3,)\n    sigma: ()\nDraws: 4000"""
+    assert repr(fit) == expected

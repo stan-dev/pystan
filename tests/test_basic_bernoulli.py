@@ -57,6 +57,8 @@ def test_bernoulli_sampling(fit):
     assert fit.values.shape[1] == 1000
     assert fit.values.shape[2] == 4
 
+    assert len(fit) == 1  # one parameter (theta)
+
     # for a fit with only one scalar parameter, it is the last one
     assert 0.1 < fit.values[-1, :, 0].mean() < 0.4
     assert 0.1 < fit.values[-1, :, 1].mean() < 0.4
