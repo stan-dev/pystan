@@ -128,11 +128,11 @@ class Fit:
         return df
 
     @property
-    def values(self):
+    def values(self) -> np.ndarray:
         return self._draws
 
     @property
-    def _finished(self):
+    def _finished(self) -> bool:
         return not self._draws.flags["WRITEABLE"]
 
     def __getitem__(self, param):
@@ -157,6 +157,25 @@ class Fit:
         reshape_args = param_dim + [-1] if param_dim else (1, -1)
         # reshape, recover the shape of the stan parameter
         return view.reshape(*reshape_args, order="F")
+
+    def __len__(self) -> int:
+        return len(self.param_names)
+
+    def __repr__(self) -> str:
+        # inspired by xarray
+        parts = [f"<stan.{type(self).__name__}>"]
+
+        def summarize_param(param_name, dims):
+            return f"    {param_name}: {tuple(dims)}"
+
+        if self.param_names:
+            parts.append("Parameters:")
+        for param_name, dims in zip(self.param_names, self.dims):
+            parts.append(summarize_param(param_name, dims))
+        if self._finished:
+            # total draws is num_draws (per-chain) times num_chains
+            parts.append(f"Draws: {self._draws.shape[-2] * self._draws.shape[-1]}")
+        return "\n".join(parts)
 
     def _parameter_indexes(self, param: str) -> Sequence[int]:
         """Obtain indexes for values associated with `param`.
