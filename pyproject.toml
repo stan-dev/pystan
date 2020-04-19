@@ -1,2 +1,39 @@
+[tool.poetry]
+name = "pystan"
+version = "3.0.0a11"
+description = "Python interface to Stan, a package for Bayesian inference"
+authors = [
+  "Allen Riddell <riddella@indiana.edu>",
+  "Ari Hartikainen <ahartikainen@users.noreply.github.com>",
+]
+license = "ISC"
+readme = "README.rst"
+homepage = "https://mc-stan.org"
+repository = "https://github.com/stan-dev/pystan-next"
+documentation = "https://pystan-next.readthedocs.io"
+packages = [
+    { include = "stan" },
+]
+
+classifiers = [
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: ISC License (ISCL)",
+]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+aiohttp = "^3.6"
+httpstan = "^1.0"
+tqdm = "^4.14"
+requests = "^2.18"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.4"
+pandas = "^1.0"
+
+[build-system]
+requires = ["poetry~=1.0"]
+build-backend = "poetry.masonry.api"
+
 [tool.black]
 line-length = 119
