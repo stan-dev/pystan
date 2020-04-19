@@ -120,15 +120,11 @@ class Model:
                     "num_warmup", arguments.lookup_default(arguments.Method["SAMPLE"], "num_warmup")
                 )
                 num_samples = payload.get(
-                    "num_samples",
-                    arguments.lookup_default(arguments.Method["SAMPLE"], "num_samples"),
+                    "num_samples", arguments.lookup_default(arguments.Method["SAMPLE"], "num_samples"),
                 )
-                num_thin = payload.get(
-                    "num_thin", arguments.lookup_default(arguments.Method["SAMPLE"], "num_thin")
-                )
+                num_thin = payload.get("num_thin", arguments.lookup_default(arguments.Method["SAMPLE"], "num_thin"))
                 save_warmup = payload.get(
-                    "save_warmup",
-                    arguments.lookup_default(arguments.Method["SAMPLE"], "save_warmup"),
+                    "save_warmup", arguments.lookup_default(arguments.Method["SAMPLE"], "save_warmup"),
                 )
                 payloads.append(payload)
 
@@ -157,9 +153,7 @@ class Model:
             while not all(operation["done"] for operation in operations):
                 for operation in operations:
                     operation_name = operation["name"]
-                    operation.update(
-                        requests.get(f"http://{host}:{port}/v1/{operation_name}").json()
-                    )
+                    operation.update(requests.get(f"http://{host}:{port}/v1/{operation_name}").json())
                 time.sleep(0.1)
 
             stan_outputs = []
@@ -237,9 +231,5 @@ def build(program_code, data=None, random_seed=None):
         assert len({param["name"] for param in params_list}) == len(params_list)
 
         param_names, dims = zip(*((param["name"], param["dims"]) for param in params_list))
-        constrained_param_names = sum(
-            (tuple(param["constrained_names"]) for param in params_list), ()
-        )
-    return Model(
-        model_name, program_code, data, param_names, constrained_param_names, dims, random_seed
-    )
+        constrained_param_names = sum((tuple(param["constrained_names"]) for param in params_list), ())
+    return Model(model_name, program_code, data, param_names, constrained_param_names, dims, random_seed)

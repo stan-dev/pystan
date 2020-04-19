@@ -52,9 +52,7 @@ class Fit:
         # These names are gathered later in this function by inspecting the output from Stan.
         self.sample_and_sampler_param_names: Sequence[str]
 
-        num_flat_params = sum(
-            np.product(dims_ or 1) for dims_ in dims
-        )  # if dims == [] then it is a scalar
+        num_flat_params = sum(np.product(dims_ or 1) for dims_ in dims)  # if dims == [] then it is a scalar
         assert num_flat_params == len(constrained_param_names)
         num_samples_saved = (self.num_samples + self.num_warmup * self.save_warmup) // self.num_thin
 
@@ -90,9 +88,7 @@ class Fit:
 
                     for fea in msg.feature:
                         value = (
-                            fea.double_list.value.pop()
-                            if fea.HasField("double_list")
-                            else fea.int_list.value.pop()
+                            fea.double_list.value.pop() if fea.HasField("double_list") else fea.int_list.value.pop()
                         )
                         draw_row.append(value)
 
@@ -141,11 +137,7 @@ class Fit:
             raise RuntimeError("Still collecting draws for fit.")
         assert param.endswith("__") or param in self.param_names, param
         param_indexes = self._parameter_indexes(param)
-        param_dim = (
-            []
-            if param in self.sample_and_sampler_param_names
-            else self.dims[self.param_names.index(param)]
-        )
+        param_dim = [] if param in self.sample_and_sampler_param_names else self.dims[self.param_names.index(param)]
         # fmt: off
         num_samples_saved = (self.num_samples + self.num_warmup * self.save_warmup) // self.num_thin
         assert self.values.shape == (len(self.sample_and_sampler_param_names) + len(self.constrained_param_names), num_samples_saved, self.num_chains)

@@ -59,11 +59,7 @@ def test_eight_schools_sample(posterior):
     num_chains, num_samples = 2, 200
     fit = posterior.sample(num_chains=num_chains, num_samples=num_samples, num_warmup=num_samples)
     num_flat_params = schools_data["J"] * 2 + 2
-    assert fit.values.shape == (
-        len(fit.sample_and_sampler_param_names) + num_flat_params,
-        num_samples,
-        num_chains,
-    )
+    assert fit.values.shape == (len(fit.sample_and_sampler_param_names) + num_flat_params, num_samples, num_chains,)
     df = fit.to_frame()
     assert "eta.1" in df.columns
     assert len(df["eta.1"]) == num_samples * num_chains
@@ -77,6 +73,4 @@ def test_eight_schools_parameter_indexes(posterior):
     assert fit._parameter_indexes("mu") == (offset + 0,)
     assert fit._parameter_indexes("tau") == (offset + 1,)
     assert fit._parameter_indexes("eta") == tuple(offset + i for i in (2, 3, 4, 5, 6, 7, 8, 9))
-    assert fit._parameter_indexes("theta") == tuple(
-        offset + i for i in (10, 11, 12, 13, 14, 15, 16, 17)
-    )
+    assert fit._parameter_indexes("theta") == tuple(offset + i for i in (10, 11, 12, 13, 14, 15, 16, 17))

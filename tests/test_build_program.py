@@ -14,17 +14,13 @@ def test_build_basic():
 
 def test_stanc_no_such_distribution():
     program_code = "parameters {real z;} model {z ~ no_such_distribution();}"
-    with pytest.raises(
-        RuntimeError, match=r"Probability function must end in _lpdf or _lpmf\. Found"
-    ):
+    with pytest.raises(RuntimeError, match=r"Probability function must end in _lpdf or _lpmf\. Found"):
         stan.build(program_code=program_code)
 
 
 def test_stanc_invalid_assignment():
     program_code = "parameters {real z;} model {z = 3;}"
-    with pytest.raises(
-        RuntimeError, match=r"Cannot assign to variable outside of declaration block"
-    ):
+    with pytest.raises(RuntimeError, match=r"Cannot assign to variable outside of declaration block"):
         stan.build(program_code=program_code)
 
 
