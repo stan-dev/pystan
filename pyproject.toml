@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pystan"
-version = "3.0.0a11"
+version = "3.0.0a12"
 description = "Python interface to Stan, a package for Bayesian inference"
 authors = [
   "Allen Riddell <riddella@indiana.edu>",
