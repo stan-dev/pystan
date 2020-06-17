@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pystan"
-version = "3.0.0a12"
+version = "3.0.0-beta.0"
 description = "Python interface to Stan, a package for Bayesian inference"
 authors = [
   "Allen Riddell <riddella@indiana.edu>",
@@ -23,7 +23,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.7"
 aiohttp = "^3.6"
-httpstan = "^1.0"
+httpstan = "^2.0.2"
 tqdm = "^4.14"
 requests = "^2.18"
 
@@ -37,3 +37,10 @@ build-backend = "poetry.masonry.api"
 
 [tool.black]
 line-length = 119
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 119
