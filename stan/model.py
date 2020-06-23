@@ -1,9 +1,8 @@
+import asyncio
+import aiohttp
 import collections.abc
 import json
-import time
 import typing
-
-import requests
 
 import httpstan.models
 import httpstan.schemas
@@ -100,87 +99,86 @@ class Model:
         if len(init) != num_chains:
             raise ValueError("Initial values must be provided for each chain.")
 
-        with stan.common.httpstan_server() as server:
-            host, port = server.host, server.port
-            stan_outputs = [[] for _ in range(num_chains)]
+        payloads = []
+        for chain in range(1, num_chains + 1):
+            payload = {"function": "stan::services::sample::hmc_nuts_diag_e_adapt"}
+            payload.update(kwargs)
+            payload["chain"] = chain
+            payload["data"] = self.data
+            payload["init"] = init.pop(0)
+            if self.random_seed is not None:
+                payload["random_seed"] = self.random_seed
 
-            payloads = []
-            for chain in range(1, num_chains + 1):
-                payload = {"function": "stan::services::sample::hmc_nuts_diag_e_adapt"}
-                payload.update(kwargs)
-                payload["chain"] = chain
-                payload["data"] = self.data
-                payload["init"] = init.pop(0)
-                if self.random_seed is not None:
-                    payload["random_seed"] = self.random_seed
+            # fit needs to know num_samples, num_warmup, num_thin, save_warmup
+            # progress bar needs to know some of these
+            num_warmup = payload.get("num_warmup", arguments.lookup_default(arguments.Method["SAMPLE"], "num_warmup"))
+            num_samples = payload.get(
+                "num_samples", arguments.lookup_default(arguments.Method["SAMPLE"], "num_samples"),
+            )
+            num_thin = payload.get("num_thin", arguments.lookup_default(arguments.Method["SAMPLE"], "num_thin"))
+            save_warmup = payload.get(
+                "save_warmup", arguments.lookup_default(arguments.Method["SAMPLE"], "save_warmup"),
+            )
+            payloads.append(payload)
 
-                # fit needs to know num_samples, num_warmup, num_thin, save_warmup
-                # progress bar needs to know some of these
-                num_warmup = payload.get(
-                    "num_warmup", arguments.lookup_default(arguments.Method["SAMPLE"], "num_warmup")
-                )
-                num_samples = payload.get(
-                    "num_samples", arguments.lookup_default(arguments.Method["SAMPLE"], "num_samples"),
-                )
-                num_thin = payload.get("num_thin", arguments.lookup_default(arguments.Method["SAMPLE"], "num_thin"))
-                save_warmup = payload.get(
-                    "save_warmup", arguments.lookup_default(arguments.Method["SAMPLE"], "save_warmup"),
-                )
-                payloads.append(payload)
+        def extract_protobuf_messages(fit_bytes):
+            varint_decoder = google.protobuf.internal.decoder._DecodeVarint32
+            next_pos, pos = 0, 0
+            while pos < len(fit_bytes):
+                msg = callbacks_writer_pb2.WriterMessage()
+                next_pos, pos = varint_decoder(fit_bytes, pos)
+                msg.ParseFromString(fit_bytes[pos : pos + next_pos])
+                yield msg
+                pos += next_pos
 
-            # WISHLIST(AR): rewriting this function in Cython (in httpstan) might speed things up
-            def extract_protobuf_messages(fit_bytes):
-                varint_decoder = google.protobuf.internal.decoder._DecodeVarint32
-                next_pos, pos = 0, 0
-                while pos < len(fit_bytes):
-                    msg = callbacks_writer_pb2.WriterMessage()
-                    next_pos, pos = varint_decoder(fit_bytes, pos)
-                    msg.ParseFromString(fit_bytes[pos : pos + next_pos])
-                    yield msg
-                    pos += next_pos
+        async def go():
+            async with stan.common.httpstan_server() as (host, port):
+                stan_outputs = [[] for _ in range(num_chains)]
 
-            fits_url = f"http://{host}:{port}/v1/{self.model_name}/fits"
-            operations = []
-            for payload in payloads:
-                r = requests.post(fits_url, json=payload)
-                if r.status_code == 422:
-                    raise ValueError(str(r.json()))
-                elif r.status_code != 201:
-                    raise RuntimeError(r.json()["message"])
-                assert r.status_code == 201, r.status_code
-                operations.append(r.json())
+                fits_url = f"http://{host}:{port}/v1/{self.model_name}/fits"
+                operations = []
+                for payload in payloads:
+                    async with aiohttp.request("POST", fits_url, json=payload) as resp:
+                        if resp.status == 422:
+                            raise ValueError(str(await resp.json()))
+                        elif resp.status != 201:
+                            raise RuntimeError((await resp.json())["message"])
+                        assert resp.status == 201
+                        operations.append(await resp.json())
 
-            while not all(operation["done"] for operation in operations):
+                while not all(operation["done"] for operation in operations):
+                    for operation in operations:
+                        operation_name = operation["name"]
+                        async with aiohttp.request("GET", f"http://{host}:{port}/v1/{operation_name}") as resp:
+                            operation.update(await resp.json())
+                    await asyncio.sleep(0.01)
+
+                stan_outputs = []
                 for operation in operations:
-                    operation_name = operation["name"]
-                    operation.update(requests.get(f"http://{host}:{port}/v1/{operation_name}").json())
-                time.sleep(0.1)
+                    fit_name = operation["result"].get("name")
+                    if fit_name is None:  # operation["result"] is an error
+                        assert not str(operation["result"]["code"]).startswith("2"), operation
+                        raise RuntimeError(operation["result"]["message"])
+                    async with aiohttp.request("GET", f"http://{host}:{port}/v1/{fit_name}") as resp:
+                        if resp.status != 200:
+                            raise RuntimeError((await resp.json())["message"])
+                        stan_outputs.append(tuple(extract_protobuf_messages(await resp.read())))
+                for stan_output in stan_outputs:
+                    assert isinstance(stan_output, tuple), stan_output
 
-            stan_outputs = []
-            for operation in operations:
-                fit_name = operation["result"].get("name")
-                if fit_name is None:  # operation["result"] is an error
-                    assert not str(operation["result"]["code"]).startswith("2"), operation
-                    raise RuntimeError(operation["result"]["message"])
-                r = requests.get(f"http://{host}:{port}/v1/{fit_name}", json=payload)
-                if r.status_code != 200:
-                    response_payload = r.json()
-                    assert "message" in response_payload, response_payload
-                    raise RuntimeError(response_payload["message"])
-                stan_outputs.append(tuple(extract_protobuf_messages(r.content)))
-            for stan_output in stan_outputs:
-                assert isinstance(stan_output, tuple), stan_output
-        return stan.fit.Fit(
-            stan_outputs,
-            num_chains,
-            self.param_names,
-            self.constrained_param_names,
-            self.dims,
-            num_warmup,
-            num_samples,
-            num_thin,
-            save_warmup,
-        )
+            return stan.fit.Fit(
+                stan_outputs,
+                num_chains,
+                self.param_names,
+                self.constrained_param_names,
+                self.dims,
+                num_warmup,
+                num_samples,
+                num_thin,
+                save_warmup,
+            )
+
+        return asyncio.run(go())
 
 
 def build(program_code, data=None, random_seed=None):
@@ -208,28 +206,23 @@ def build(program_code, data=None, random_seed=None):
     data = _make_json_serializable(data)
     assert all(not isinstance(value, np.ndarray) for value in data.values())
 
-    with stan.common.httpstan_server() as server:
-        host, port = server.host, server.port
+    async def go():
+        async with stan.common.httpstan_server() as (host, port):
+            path, payload = "/v1/models", {"program_code": program_code}
+            async with aiohttp.request("POST", f"http://{host}:{port}{path}", json=payload) as resp:
+                if resp.status != 201:
+                    raise RuntimeError((await resp.json())["message"])
+                model_name = (await resp.json())["name"]
 
-        path, payload = "/v1/models", {"program_code": program_code}
-        response = requests.post(f"http://{host}:{port}{path}", json=payload)
-        if response.status_code != 201:
-            response_payload = response.json()
-            assert "message" in response_payload, response_payload
-            message = response_payload["message"]
-            raise RuntimeError(message)
-        response_payload = response.json()
-        model_name = response_payload["name"]
+            path, payload = f"/v1/{model_name}/params", {"data": data}
+            async with aiohttp.request("POST", f"http://{host}:{port}{path}", json=payload) as resp:
+                if resp.status != 200:
+                    raise RuntimeError((await resp.json())["message"])
+                params_list = (await resp.json())["params"]
+            assert len({param["name"] for param in params_list}) == len(params_list)
+            param_names, dims = zip(*((param["name"], param["dims"]) for param in params_list))
+            constrained_param_names = sum((tuple(param["constrained_names"]) for param in params_list), ())
 
-        path, payload = f"/v1/{model_name}/params", {"data": data}
-        response = requests.post(f"http://{host}:{port}{path}", json=payload)
-        response_payload = response.json()
-        if response.status_code != 200:
-            raise RuntimeError(response_payload["message"])
-        assert response_payload.get("name") == model_name, response_payload
-        params_list = response_payload["params"]
-        assert len({param["name"] for param in params_list}) == len(params_list)
+            return Model(model_name, program_code, data, param_names, constrained_param_names, dims, random_seed)
 
-        param_names, dims = zip(*((param["name"], param["dims"]) for param in params_list))
-        constrained_param_names = sum((tuple(param["constrained_names"]) for param in params_list), ())
-    return Model(model_name, program_code, data, param_names, constrained_param_names, dims, random_seed)
+    return asyncio.run(go())
