@@ -1,71 +1,28 @@
 """Common routines"""
-import asyncio
 import contextlib
 import socket
-import threading
-import time
-import typing
 
 import aiohttp.web
-import requests
 
 import httpstan.app
 
 
-class ServerAddress(typing.NamedTuple):
-    host: str
-    port: int
+def unused_tcp_port():
+    s = socket.socket()
+    s.bind(("127.0.0.1", 0))
+    port = s.getsockname()[1]
+    s.close()
+    return port
 
 
-@contextlib.contextmanager
-def httpstan_server():
-    """Manage starting and stopping an httpstan web gateway."""
-
-    def unused_port():
-        s = socket.socket()
-        s.bind(("127.0.0.1", 0))
-        port = s.getsockname()[1]
-        s.close()
-        return port
-
-    host, port = "127.0.0.1", unused_port()
-    runner = aiohttp.web.AppRunner(httpstan.app.make_app())
-    loop = asyncio.get_event_loop()
-
-    # After dropping Python 3.6, use `asyncio.run`
-    asyncio.get_event_loop().run_until_complete(runner.setup())
+@contextlib.asynccontextmanager
+async def httpstan_server():
+    """Manage starting and stopping the httpstan HTTP server."""
+    host, port = "127.0.0.1", unused_tcp_port()
+    app = httpstan.app.make_app()
+    runner = aiohttp.web.AppRunner(app)
+    await runner.setup()
     site = aiohttp.web.TCPSite(runner, host, port)
-
-    try:
-        # After dropping Python 3.6, use `asyncio.run`
-        asyncio.get_event_loop().run_until_complete(site.start())
-    except OSError:  # port already in use
-        raise
-
-    t = threading.Thread(target=loop.run_forever)
-    try:
-        # after this call, the event loop is running in thread which is not the main
-        # thread. All interactions with the event loop must use thread-safe calls
-        t.start()
-
-        # wait until server is ready
-        retries = 10
-        for _ in range(retries):
-            try:
-                r = requests.get(f"http://{host}:{port}/v1/health", timeout=0.01)
-            except requests.ConnectionError:
-                time.sleep(0.01)
-                continue
-            except requests.Timeout:
-                continue
-            if r.status_code == 200:
-                break
-        else:
-            raise RuntimeError("Could not communicate with httpstan server.")
-
-        yield ServerAddress(host=host, port=port)
-
-    finally:
-        asyncio.run_coroutine_threadsafe(runner.cleanup(), loop)
-        loop.call_soon_threadsafe(loop.stop)  # stops `run_forever`
-        t.join(timeout=1)
+    await site.start()
+    yield (host, port)
+    await runner.cleanup()

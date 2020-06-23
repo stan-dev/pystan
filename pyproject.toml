@@ -25,7 +25,6 @@ python = "^3.7"
 aiohttp = "^3.6"
 httpstan = "^2.0.2"
 tqdm = "^4.14"
-requests = "^2.18"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.4"
