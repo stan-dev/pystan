@@ -29,16 +29,6 @@ def posterior():
     return stan.build(program_code, data=data)
 
 
-def test_data_wrong_dtype(posterior):
-    # pull in posterior to cache compilation
-    bad_data = copy.deepcopy(data)
-    # float is wrong dtype
-    bad_data["y"] = np.array(bad_data["y"], dtype=float)
-    assert bad_data["y"].dtype == float
-    with pytest.raises(RuntimeError, match=r"int variable contained non-int values"):
-        stan.build(program_code, data=bad_data)
-
-
 def test_data_unmodified(posterior):
     # pull in posterior to cache compilation
     data_with_array = copy.deepcopy(data)
