@@ -31,13 +31,6 @@ def fit(posterior):
     return posterior.sample(num_chains=4)
 
 
-def test_bernoulli_sampling_error():
-    bad_data = data.copy()
-    del bad_data["N"]
-    with pytest.raises(RuntimeError, match=r"variable does not exist"):
-        stan.build(program_code, data=bad_data)
-
-
 def test_bernoulli_sampling_thin(posterior):
     fit = posterior.sample(num_thin=2)
     assert fit.values.shape[1] == 500
