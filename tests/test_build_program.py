@@ -14,13 +14,13 @@ def test_build_basic():
 
 def test_stanc_no_such_distribution():
     program_code = "parameters {real z;} model {z ~ no_such_distribution();}"
-    with pytest.raises(RuntimeError, match=r"Probability function must end in _lpdf or _lpmf\. Found"):
+    with pytest.raises(RuntimeError, match=r"Semantic error in"):
         stan.build(program_code=program_code)
 
 
 def test_stanc_invalid_assignment():
     program_code = "parameters {real z;} model {z = 3;}"
-    with pytest.raises(RuntimeError, match=r"Cannot assign to variable outside of declaration block"):
+    with pytest.raises(RuntimeError, match=r"Semantic error in"):
         stan.build(program_code=program_code)
 
 
@@ -34,5 +34,5 @@ def test_stanc_exception_semicolon():
         z ~ normal(0, 1);
         y ~ normal(0, 1);}
     """
-    with pytest.raises(RuntimeError, match=r'PARSER EXPECTED: ";"'):
+    with pytest.raises(RuntimeError, match=r"Syntax error in"):
         stan.build(program_code=program_code)
