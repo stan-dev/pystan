@@ -26,9 +26,16 @@ aiohttp = "^3.6"
 httpstan = "^2.0.2"
 tqdm = "^4.14"
 
+# docs
+sphinx = { version = "^2.3.1", optional = true }
+sphinx-rtd-theme = { version = "^0.4", optional = true }
+
 [tool.poetry.dev-dependencies]
 pytest = "^5.4"
 pandas = "^1.0"
+
+[tool.poetry.extras]
+docs = ["sphinx", "sphinx-rtd-theme"]
 
 [build-system]
 requires = ["poetry~=1.0"]
