@@ -1,9 +1,0 @@
-# docs requirements
-# these requirements are used by the documentation builder
-# these are placed here (rather than in pyproject.toml) because we want to be able
-# to build the documentation without installing the package (which is time-consuming)
-
-httpstan~=1.1
-
-sphinx~=2.2 # BSD
-sphinx-rtd-theme~=0.4
