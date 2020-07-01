@@ -1,3 +1,3 @@
 from stan.model import build  # noqa
 
-__version__ = "3.0.0a12"
+__version__ = "3.0.0-beta.0"
