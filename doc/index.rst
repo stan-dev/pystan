@@ -71,5 +71,6 @@ Documentation
 
    getting_started
    installation
-   contributing
+   upgrading
    reference
+   contributing
