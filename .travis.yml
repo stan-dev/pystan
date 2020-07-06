@@ -1,23 +1,16 @@
-dist: bionic
+version: ~> 1.0
 language: python
 python: 3.7
-matrix:
-  include:
-    - python: 3.7
-    - python: 3.8
-    - env: TOXENV=flake8
-    - env: TOXENV=format
-    - env: TOXENV=mypy
-    - env: TOXENV=docs
+os: linux
+dist: bionic
+jobs:
+  - python: 3.7
+  - python: 3.8
 cache: pip
 before_install:
   - python --version
 install:
   - pip install "poetry<2,>=1.0" tox
 script:
-  - |
-      if [[ -n $TOXENV ]]; then
-        tox
-      else
-        poetry install -v && poetry run pytest -s -v tests
-      fi
+  - tox
+  - poetry install -v && poetry run pytest -s -v tests
