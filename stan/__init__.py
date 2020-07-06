@@ -1,3 +1,8 @@
 from stan.model import build  # noqa
 
-__version__ = "3.0.0-beta.1"
+try:
+    from importlib.metadata import version
+
+    __version__ = version("pystan")
+except ModuleNotFoundError:
+    pass
