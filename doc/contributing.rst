@@ -3,7 +3,7 @@ Contributing to PyStan
 ======================
 
 Introduction
-------------
+============
 
 PyStan is a Python interface to C++ functions in the `Stan library`_.
 Specifically, PyStan provides an interface to the C++ functions in the ``stan::services`` namespace.
@@ -24,7 +24,7 @@ Contract (C4)`_.
 .. _Collective Code Construction Contract (C4): https://rfc.zeromq.org/spec:42/C4/
 
 Coding Style
-------------
+============
 
 PyStan code is `PEP 8`_ compliant. The project uses the code formatter black_ with a maximum
 line-length of 119 characters. Documentation, comments, and docstrings should be wrapped at 79 characters, even though PEP 8 suggests 72.
@@ -35,7 +35,7 @@ line-length of 119 characters. Documentation, comments, and docstrings should be
 PyStan code is also checked by ``flake8`` and ``mypy``.
 
 Commit Messages
----------------
+===============
 
 git commit messages must be formatted carefully in order to allow the automatic generation of release notes.
 
