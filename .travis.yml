@@ -1,6 +1,6 @@
 version: ~> 1.0
 language: python
-python: 3.7
+python: 3.8
 os: linux
 dist: bionic
 jobs:
@@ -12,5 +12,8 @@ before_install:
 install:
   - pip install "poetry<2,>=1.0" tox
 script:
-  - tox
+  - |
+    if [[ $TRAVIS_PYTHON_VERSION != "3.7" ]]; then
+      tox
+    fi
   - poetry install -v && poetry run pytest -s -v tests
