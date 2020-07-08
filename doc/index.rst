@@ -4,7 +4,8 @@ PyStan
 
 Release v\ |version|
 
-**NOTE: This documentation describes a BETA release of PyStan 3.**
+.. caution::
+    This documentation describes a BETA release of PyStan 3.
 
 **PyStan** is a Python interface to Stan, a package for Bayesian inference.
 
@@ -22,10 +23,11 @@ Notable features of PyStan include:
 
 .. _getting-started:
 
-Quickstart
-==========
+Quick start
+===========
 
-**NOTE: Pre-release version must be installed with ``python3 -m pip install --pre pystan``.**
+.. tip::
+    Pre-release versions must be installed with ``python3 -m pip install --pre pystan``.
 
 Install PyStan with ``python3 -m pip install pystan``. (PyStan requires Python 3.7 or higher running on a Linux or macOS system.)
 

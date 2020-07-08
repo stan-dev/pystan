@@ -2,7 +2,8 @@
 Upgrading to Newer Releases
 ===========================
 
-**NOTE: This section is a work-in-progress.**
+.. caution::
+    This section is a work-in-progress.
 
 Upgrading to 3.0
 ================
