@@ -2,7 +2,8 @@
 Getting Started
 ================
 
-**NOTE: This is a work-in-progress.**
+.. caution::
+    This is a work-in-progress.
 
 The following block of code shows how to use PyStan with a model which studied coaching effects across eight schools (see Section 5.5 of Gelman et al (2003)). This hierarchical model is often called the "eight schools" model.
 
