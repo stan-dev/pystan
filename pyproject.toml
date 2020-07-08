@@ -24,6 +24,7 @@ classifiers = [
 python = "^3.7"
 aiohttp = "^3.6"
 httpstan = "^2.0.2"
+numpy = "^1.7"
 tqdm = "^4.14"
 
 # docs
