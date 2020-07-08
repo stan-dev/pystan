@@ -70,3 +70,5 @@ Alternatively, we can extract all variables into a pandas DataFrame.
 .. code-block:: python
 
     df = fit.to_frame()
+
+Using the ``to_frame()`` method requires pandas. (Installing ``pystan`` will not install ``pandas``.) Install pandas with ``python3 -m pip install pandas``.

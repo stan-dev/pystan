@@ -16,12 +16,12 @@ PyStan 3 users aware of changes in variable, function, and method names should b
 
 Here's how we draw from the posterior distribution in the eight schools model using PyStan 3:
 
-::
+.. code-block:: python
 
     import stan
 
-    schools_code = """data { …"""
-    schools_data = {'J': 8, … }
+    schools_code = """data { ..."""
+    schools_data = {'J': 8, ... }
 
     posterior = stan.build(schools_code, data=schools_data, random_seed=1)
     fit = posterior.sample(num_chains=4, num_samples=1000)
@@ -29,12 +29,12 @@ Here's how we draw from the posterior distribution in the eight schools model us
 
 Compare this with the equivalent PyStan 2 code:
 
-::
+.. code-block:: python
 
     import pystan
 
-    schools_code = """data { …"""
-    schools_data = {'J': 8, … }
+    schools_code = """data { ..."""
+    schools_data = {'J': 8, ... }
 
     sm = pystan.StanModel(model_code=schools_code)
     fit = sm.sampling(data=schools_data, iter=1000, chains=4, seed=1)

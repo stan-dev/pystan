@@ -25,6 +25,8 @@ Notable features of PyStan include:
 Quickstart
 ==========
 
+**NOTE: Pre-release version must be installed with ``python3 -m pip install --pre pystan``.**
+
 Install PyStan with ``python3 -m pip install pystan``. (PyStan requires Python 3.7 or higher running on a Linux or macOS system.)
 
 This block of code shows how to use PyStan with a hierarchical model used to study coaching effects across eight schools (see Section 5.5 of Gelman et al. (2003)).
@@ -60,7 +62,7 @@ This block of code shows how to use PyStan with a hierarchical model used to stu
     posterior = stan.build(schools_code, data=schools_data)
     fit = posterior.sample(num_chains=4, num_samples=1000)
     eta = fit["eta"]  # array with shape (8, 4000)
-    df = fit.to_frame()  # pandas `DataFrame`
+    df = fit.to_frame()  # pandas `DataFrame, requires pandas
 
 
 Documentation
