@@ -2,6 +2,8 @@
 Installation
 ============
 
+**NOTE: Pre-release version must be installed with ``python3 -m pip install --pre pystan``.**
+
 In order to install PyStan make sure your system satisfies the following requirements:
 
 - Python 3.7 or higher
