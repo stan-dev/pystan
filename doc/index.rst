@@ -21,6 +21,8 @@ Notable features of PyStan include:
 * An interface similar to that of RStan
 * Open source software: ISC License
 
+(Upgrading from PyStan 2? We have you covered: :ref:`upgrading`.)
+
 .. _getting-started:
 
 Quick start
