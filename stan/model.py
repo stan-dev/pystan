@@ -1,6 +1,7 @@
 import asyncio
 import collections.abc
 import json
+import re
 import typing
 
 import aiohttp
@@ -12,6 +13,7 @@ import httpstan.services.arguments as arguments
 import httpstan.utils
 import numpy as np
 from clikit.io import ConsoleIO
+from clikit.ui.components import ProgressBar
 
 import stan.common
 import stan.fit
@@ -133,6 +135,11 @@ class Model:
                 pos += next_pos
 
         async def go():
+            progress_bar = ProgressBar(ConsoleIO())
+            progress_bar.set_format("very_verbose")
+            progress_bar.set_message("Sampling...")
+
+            current_and_max_iterations_re = re.compile(r"Iteration:\s+(\d+)\s+/\s+(\d+)")
             async with stan.common.httpstan_server() as (host, port):
                 stan_outputs = [[] for _ in range(num_chains)]
 
@@ -147,12 +154,28 @@ class Model:
                         assert resp.status == 201
                         operations.append(await resp.json())
 
+                # poll to get progress for each chain until all chains finished
+                current_iterations = {}
                 while not all(operation["done"] for operation in operations):
                     for operation in operations:
+                        if operation["done"]:
+                            continue
                         operation_name = operation["name"]
                         async with aiohttp.request("GET", f"http://{host}:{port}/v1/{operation_name}") as resp:
                             operation.update(await resp.json())
+                            progress_message = operation["metadata"].get("progress")
+                            if not progress_message:
+                                continue
+                            iteration, iteration_max = map(
+                                int, current_and_max_iterations_re.findall(progress_message).pop(0)
+                            )
+                            if not progress_bar.get_max_steps():  # i.e., has not started
+                                progress_bar.start(max=iteration_max)
+                            current_iterations[operation["name"]] = iteration
+                            progress_bar.set_progress(min(current_iterations.values()))
                     await asyncio.sleep(0.01)
+                progress_bar.set_message("Sampling finished.")
+                progress_bar.finish()
 
                 stan_outputs = []
                 for operation in operations:
