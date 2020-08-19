@@ -135,7 +135,8 @@ class Model:
                 pos += next_pos
 
         async def go():
-            progress_bar = ProgressBar(ConsoleIO())
+            io = ConsoleIO()
+            progress_bar = ProgressBar(io)
             progress_bar.set_format("very_verbose")
             progress_bar.set_message("Sampling...")
 
@@ -187,9 +188,36 @@ class Model:
                         if resp.status != 200:
                             raise RuntimeError((await resp.json())["message"])
                         stan_outputs.append(tuple(extract_protobuf_messages(await resp.read())))
+
+                def is_nonempty_logger_message(msg):
+                    return (
+                        msg.topic == callbacks_writer_pb2.WriterMessage.Topic.LOGGER
+                        and msg.feature[0].string_list.value[0].strip() != "info:"
+                    )
+
+                def is_iteration_or_elapsed_time_logger_message(msg):
+                    # Assumes `msg` is a message with topic `LOGGER`.
+                    text = msg.feature[0].string_list.value[0]
+                    return (
+                        text.startswith("info:Iteration:")
+                        or text.startswith("info: Elapsed Time:")
+                        # this detects lines following "Elapsed Time:", part of a multi-line Stan message
+                        or text.startswith("info:" + " " * 15)
+                    )
+
+                logger_messages = []
                 for stan_output in stan_outputs:
                     assert isinstance(stan_output, tuple), stan_output
+                    logger_messages.extend(filter(is_nonempty_logger_message, stan_output))
 
+                non_standard_logger_messages = list(
+                    filter(lambda msg: not is_iteration_or_elapsed_time_logger_message(msg), logger_messages)
+                )
+                if non_standard_logger_messages:
+                    io.error("\n<info>Messages received during sampling:</info>\n")
+                    for msg in non_standard_logger_messages:
+                        text = msg.feature[0].string_list.value[0].replace("info:", "  ")
+                        io.error(f"<info>{text}</info>\n")
             return stan.fit.Fit(
                 stan_outputs,
                 num_chains,
