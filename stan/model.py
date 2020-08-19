@@ -170,9 +170,9 @@ class Model:
                                 int, current_and_max_iterations_re.findall(progress_message).pop(0)
                             )
                             if not progress_bar.get_max_steps():  # i.e., has not started
-                                progress_bar.start(max=iteration_max)
+                                progress_bar.start(max=iteration_max * num_chains)
                             current_iterations[operation["name"]] = iteration
-                            progress_bar.set_progress(min(current_iterations.values()))
+                            progress_bar.set_progress(sum(current_iterations.values()))
                     await asyncio.sleep(0.01)
                 progress_bar.set_message("Sampling finished.")
                 progress_bar.finish()
