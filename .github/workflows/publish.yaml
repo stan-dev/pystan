@@ -20,4 +20,4 @@ jobs:
         env:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
         run: |
-          python -m poetry publish --build -u __token__ -p $PYPI_TOKEN -r testpypi
+          python -m poetry publish --build -u __token__ -p $PYPI_TOKEN
