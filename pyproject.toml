@@ -23,7 +23,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.7"
 aiohttp = "^3.6"
-httpstan = "^2.0.2"
+httpstan = "^2.1.0"
 numpy = "^1.7"
 clikit = "^0.6.2"
 
