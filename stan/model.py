@@ -271,10 +271,13 @@ def build(program_code, data=None, random_seed=None):
             # Note: during compilation `httpstan` redirects stderr to /dev/null, making `print` impossible.
             path, payload = "/v1/models", {"program_code": program_code}
             async with aiohttp.request("POST", f"http://{host}:{port}{path}", json=payload) as resp:
+                response_payload = await resp.json()
                 if resp.status != 201:
-                    raise RuntimeError((await resp.json())["message"])
-                assert model_name == (await resp.json())["name"]
-
+                    raise RuntimeError(response_payload["message"])
+                assert model_name == response_payload["name"]
+                if response_payload.get("stanc_warnings"):
+                    io.error_line("<comment>Warnings from stanc:</comment>")
+                    io.error_line(response_payload["stanc_warnings"])
             path, payload = f"/v1/{model_name}/params", {"data": data}
             async with aiohttp.request("POST", f"http://{host}:{port}{path}", json=payload) as resp:
                 if resp.status != 200:
