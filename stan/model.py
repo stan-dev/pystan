@@ -218,6 +218,13 @@ class Model:
                     for msg in non_standard_logger_messages:
                         text = msg.feature[0].string_list.value[0].replace("info:", "  ")
                         io.error(f"<info>{text}</info>\n")
+
+                # clean up after ourselves when fit is uncacheable (no random seed)
+                if self.random_seed is None:
+                    async with aiohttp.request("DELETE", f"http://{host}:{port}/v1/{fit_name}") as resp:
+                        if resp.status not in {200, 202, 204}:
+                            raise RuntimeError((await resp.json())["message"])
+
             return stan.fit.Fit(
                 stan_outputs,
                 num_chains,
