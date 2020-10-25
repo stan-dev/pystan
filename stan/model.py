@@ -237,7 +237,10 @@ class Model:
                 save_warmup,
             )
 
-        return asyncio.run(go())
+        try:
+            return asyncio.run(go())
+        except KeyboardInterrupt:
+            pass
 
 
 def build(program_code, data=None, random_seed=None):
@@ -295,4 +298,7 @@ def build(program_code, data=None, random_seed=None):
             constrained_param_names = sum((tuple(param["constrained_names"]) for param in params_list), ())
             return Model(model_name, program_code, data, param_names, constrained_param_names, dims, random_seed)
 
-    return asyncio.run(go())
+    try:
+        return asyncio.run(go())
+    except KeyboardInterrupt:
+        pass
