@@ -4,9 +4,9 @@ python: 3.8
 os: linux
 dist: focal
 jobs:
-  - python: 3.7
   - python: 3.8
-
+  - python: 3.9
+  - python: nightly
   - os: osx
     osx_image: xcode12.2
     language: generic
@@ -22,9 +22,9 @@ before_install:
 install:
   - pip install "poetry<2,>=1.0" tox
 script:
-  # run style checks on linux, Python 3.8 or higher
+  # run style checks on linux
   - |
-    if [[ $TRAVIS_PYTHON_VERSION != "3.7" && $TRAVIS_OS_NAME != "osx" ]]; then
+    if [[ $TRAVIS_OS_NAME != "osx" ]]; then
       tox || travis_terminate 1
     fi
   - poetry install -v && poetry run pytest -s -v tests
