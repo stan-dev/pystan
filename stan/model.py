@@ -192,17 +192,17 @@ class Model:
                 def is_nonempty_logger_message(msg):
                     return (
                         msg.topic == callbacks_writer_pb2.WriterMessage.Topic.LOGGER
-                        and msg.feature[0].string_list.value[0].strip() != "info:"
+                        and msg.feature[0].bytes_list.value[0].strip() != b"info:"
                     )
 
                 def is_iteration_or_elapsed_time_logger_message(msg):
                     # Assumes `msg` is a message with topic `LOGGER`.
-                    text = msg.feature[0].string_list.value[0]
+                    text = msg.feature[0].bytes_list.value[0]
                     return (
-                        text.startswith("info:Iteration:")
-                        or text.startswith("info: Elapsed Time:")
+                        text.startswith(b"info:Iteration:")
+                        or text.startswith(b"info: Elapsed Time:")
                         # this detects lines following "Elapsed Time:", part of a multi-line Stan message
-                        or text.startswith("info:" + " " * 15)
+                        or text.startswith(b"info:" + b" " * 15)
                     )
 
                 logger_messages = []
@@ -216,8 +216,8 @@ class Model:
                 if non_standard_logger_messages:
                     io.error("\n<info>Messages received during sampling:</info>\n")
                     for msg in non_standard_logger_messages:
-                        text = msg.feature[0].string_list.value[0].replace("info:", "  ")
-                        io.error(f"<info>{text}</info>\n")
+                        text_bytes = msg.feature[0].bytes_list.value[0].replace(b"info:", b"  ")
+                        io.error(f"<info>{text_bytes.decode()}</info>\n")
 
                 # clean up after ourselves when fit is uncacheable (no random seed)
                 if self.random_seed is None:
