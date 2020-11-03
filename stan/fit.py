@@ -66,14 +66,14 @@ class Fit:
             for msg in stan_output:
                 if msg.topic == callbacks_writer_pb2.WriterMessage.Topic.Value("SAMPLE"):
                     # Ignore sample message which is mixed together with proper draws.
-                    if msg.feature and msg.feature[0].name == "":
+                    if msg.feature and msg.feature[0].name == b"":
                         continue
 
                     draw_row = []  # a "row" of values from a single draw from Stan C++
 
                     # for the first draw: collect sample and sampler parameter names.
                     if not hasattr(self, "_draws"):
-                        feature_names = tuple(fea.name for fea in msg.feature)
+                        feature_names = tuple(fea.name.decode() for fea in msg.feature)
                         self.sample_and_sampler_param_names = tuple(
                             name for name in feature_names if name.endswith("__")
                         )
