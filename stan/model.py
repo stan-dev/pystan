@@ -4,14 +4,14 @@ import json
 import re
 import typing
 
+
 import aiohttp
-import google.protobuf.internal.decoder
-import httpstan.callbacks_writer_pb2 as callbacks_writer_pb2
 import httpstan.models
 import httpstan.schemas
 import httpstan.services.arguments as arguments
 import httpstan.utils
 import numpy as np
+import simdjson
 from clikit.io import ConsoleIO
 from clikit.ui.components import ProgressBar
 
@@ -124,16 +124,6 @@ class Model:
             )
             payloads.append(payload)
 
-        def extract_protobuf_messages(fit_bytes):
-            varint_decoder = google.protobuf.internal.decoder._DecodeVarint32
-            next_pos, pos = 0, 0
-            while pos < len(fit_bytes):
-                msg = callbacks_writer_pb2.WriterMessage()
-                next_pos, pos = varint_decoder(fit_bytes, pos)
-                msg.ParseFromString(fit_bytes[pos : pos + next_pos])
-                yield msg
-                pos += next_pos
-
         async def go():
             io = ConsoleIO()
             progress_bar = ProgressBar(io)
@@ -142,8 +132,6 @@ class Model:
 
             current_and_max_iterations_re = re.compile(r"Iteration:\s+(\d+)\s+/\s+(\d+)")
             async with stan.common.httpstan_server() as (host, port):
-                stan_outputs = [[] for _ in range(num_chains)]
-
                 fits_url = f"http://{host}:{port}/v1/{self.model_name}/fits"
                 operations = []
                 for payload in payloads:
@@ -178,7 +166,7 @@ class Model:
                 progress_bar.set_message("Sampling finished.")
                 progress_bar.finish()
 
-                stan_outputs = []
+                stan_outputs: typing.Sequence[bytes] = []
                 for operation in operations:
                     fit_name = operation["result"].get("name")
                     if fit_name is None:  # operation["result"] is an error
@@ -187,37 +175,36 @@ class Model:
                     async with aiohttp.request("GET", f"http://{host}:{port}/v1/{fit_name}") as resp:
                         if resp.status != 200:
                             raise RuntimeError((await resp.json())["message"])
-                        stan_outputs.append(tuple(extract_protobuf_messages(await resp.read())))
+                        stan_outputs.append(await resp.read())
 
-                def is_nonempty_logger_message(msg):
-                    return (
-                        msg.topic == callbacks_writer_pb2.WriterMessage.Topic.LOGGER
-                        and msg.feature[0].bytes_list.value[0].strip() != b"info:"
-                    )
+                def is_nonempty_logger_message(msg: simdjson.Object):
+                    return msg["topic"] == "logger" and msg["values"][0] != "info:"
 
-                def is_iteration_or_elapsed_time_logger_message(msg):
-                    # Assumes `msg` is a message with topic `LOGGER`.
-                    text = msg.feature[0].bytes_list.value[0]
+                def is_iteration_or_elapsed_time_logger_message(msg: simdjson.Object):
+                    # Assumes `msg` is a message with topic `logger`.
+                    text = msg["values"][0]
                     return (
-                        text.startswith(b"info:Iteration:")
-                        or text.startswith(b"info: Elapsed Time:")
+                        text.startswith("info:Iteration:")
+                        or text.startswith("info: Elapsed Time:")
                         # this detects lines following "Elapsed Time:", part of a multi-line Stan message
-                        or text.startswith(b"info:" + b" " * 15)
+                        or text.startswith("info:" + " " * 15)
                     )
 
-                logger_messages = []
+                parser = simdjson.Parser()
+                nonstandard_logger_messages = []
                 for stan_output in stan_outputs:
-                    assert isinstance(stan_output, tuple), stan_output
-                    logger_messages.extend(filter(is_nonempty_logger_message, stan_output))
+                    assert isinstance(stan_output, bytes)
+                    for line in stan_output.splitlines():
+                        msg = parser.parse(line)
+                        if is_nonempty_logger_message(msg) and not is_iteration_or_elapsed_time_logger_message(msg):
+                            nonstandard_logger_messages.append(msg.as_dict())
+                del parser  # simdjson.Parser is no longer used at this point.
 
-                non_standard_logger_messages = list(
-                    filter(lambda msg: not is_iteration_or_elapsed_time_logger_message(msg), logger_messages)
-                )
-                if non_standard_logger_messages:
+                if nonstandard_logger_messages:
                     io.error("\n<info>Messages received during sampling:</info>\n")
-                    for msg in non_standard_logger_messages:
-                        text_bytes = msg.feature[0].bytes_list.value[0].replace(b"info:", b"  ")
-                        io.error(f"<info>{text_bytes.decode()}</info>\n")
+                    for msg in nonstandard_logger_messages:
+                        text = msg["values"][0].replace("info:", "  ")
+                        io.error(f"<info>{text}</info>\n")
 
                 # clean up after ourselves when fit is uncacheable (no random seed)
                 if self.random_seed is None:
