@@ -1,8 +1,7 @@
-from typing import Any, Sequence
+from typing import Sequence
 
 import numpy as np
-
-import httpstan.callbacks_writer_pb2 as callbacks_writer_pb2
+import simdjson
 
 
 class Fit:
@@ -25,7 +24,7 @@ class Fit:
     # (2) `Fit` need not store full copies of the raw Stan output.
     def __init__(
         self,
-        stan_outputs: Sequence[Sequence[Any]],
+        stan_outputs: Sequence[bytes],
         num_chains: int,
         param_names: Sequence[str],
         constrained_param_names: Sequence[str],
@@ -61,19 +60,19 @@ class Fit:
         # function we count them and only then allocate the array for `self._draws`.
         self._draws: np.ndarray
 
+        parser = simdjson.Parser()
         for chain_index, stan_output in zip(range(self.num_chains), self.stan_outputs):
             draw_index = 0
-            for msg in stan_output:
-                if msg.topic == callbacks_writer_pb2.WriterMessage.Topic.Value("SAMPLE"):
+            for line in stan_output.splitlines():
+                msg = parser.parse(line)
+                if msg["topic"] == "sample":
                     # Ignore sample message which is mixed together with proper draws.
-                    if msg.feature and msg.feature[0].name == b"":
+                    if not isinstance(msg["values"], simdjson.Object):
                         continue
-
-                    draw_row = []  # a "row" of values from a single draw from Stan C++
 
                     # for the first draw: collect sample and sampler parameter names.
                     if not hasattr(self, "_draws"):
-                        feature_names = tuple(fea.name.decode() for fea in msg.feature)
+                        feature_names = tuple(msg["values"].keys())
                         self.sample_and_sampler_param_names = tuple(
                             name for name in feature_names if name.endswith("__")
                         )
@@ -86,12 +85,7 @@ class Fit:
                                 f"Expected last parameter name to be one declared in program code, found `{feature_names[-1]}`"
                             )
 
-                    for fea in msg.feature:
-                        value = (
-                            fea.double_list.value.pop() if fea.HasField("double_list") else fea.int_list.value.pop()
-                        )
-                        draw_row.append(value)
-
+                    draw_row = tuple(msg["values"].values())  # a "row" of values from a single draw from Stan C++
                     self._draws[:, draw_index, chain_index] = draw_row
                     draw_index += 1
             assert draw_index == num_samples_saved
