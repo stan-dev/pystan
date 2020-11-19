@@ -30,7 +30,8 @@ def test_fit_cache():
     cache_size_before = shutil.disk_usage(cache_path()).used
     normal_posterior.sample()
     cache_size_after = shutil.disk_usage(cache_path()).used
-    assert cache_size_before == cache_size_after
+    # allow for a 4096 byte difference (an empty directory takes 4K)
+    assert abs(cache_size_before - cache_size_after) <= 4096
 
 
 def test_fit_cache_uncacheable():
