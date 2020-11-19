@@ -1,3 +1,4 @@
+import json
 from typing import Sequence
 
 import numpy as np
@@ -64,10 +65,14 @@ class Fit:
         for chain_index, stan_output in zip(range(self.num_chains), self.stan_outputs):
             draw_index = 0
             for line in stan_output.splitlines():
-                msg = parser.parse(line)
+                try:
+                    msg = parser.parse(line)
+                except ValueError:
+                    # Occurs when draws contain an nan or infinity. simdjson cannot parse such values.
+                    msg = json.loads(line)
                 if msg["topic"] == "sample":
                     # Ignore sample message which is mixed together with proper draws.
-                    if not isinstance(msg["values"], simdjson.Object):
+                    if not isinstance(msg["values"], (simdjson.Object, dict)):
                         continue
 
                     # for the first draw: collect sample and sampler parameter names.

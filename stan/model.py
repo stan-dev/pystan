@@ -195,6 +195,10 @@ class Model:
                 for stan_output in stan_outputs:
                     assert isinstance(stan_output, bytes)
                     for line in stan_output.splitlines():
+                        # Do not attempt to parse non-logger messages. Draws could contain nan or inf values.
+                        # simdjson cannot parse lines containing such values.
+                        if b'"logger"' not in line:
+                            continue
                         msg = parser.parse(line)
                         if is_nonempty_logger_message(msg) and not is_iteration_or_elapsed_time_logger_message(msg):
                             nonstandard_logger_messages.append(msg.as_dict())
