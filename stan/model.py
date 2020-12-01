@@ -308,6 +308,39 @@ class Model:
 
         return asyncio.run(go())
 
+    def log_prob(self, unconstrained_parameters: List[float], adjust_transform: bool = True) -> float:
+        """Calculate the log probability of a set of unconstrained parameters.
+
+        Arguments:
+            unconstrained_parameters: A sequence of unconstrained parameters.
+            adjust_transform: Apply jacobian adjust transform.
+
+        Returns: The log probability of the unconstrained parameters.
+
+        Notes:
+            The unconstrained parameters are passed to the log_prob
+            function in stan::model.
+
+        """
+        assert isinstance(self.data, dict)
+
+        payload = {
+            "data": self.data,
+            "unconstrained_parameters": unconstrained_parameters,
+            "adjust_transform": adjust_transform,
+        }
+
+        async def go():
+            async with stan.common.httpstan_server() as (host, port):
+                log_prob_url = f"http://{host}:{port}/v1/{self.model_name}/log_prob"
+                async with aiohttp.request("POST", log_prob_url, json=payload) as resp:
+                    response_payload = await resp.json()
+                    if resp.status != 200:
+                        raise RuntimeError(response_payload)
+                    return (await resp.json())["log_prob"]
+
+        return asyncio.run(go())
+
 
 def build(program_code, data=None, random_seed=None) -> Model:
     """Build (compile) a Stan program.
