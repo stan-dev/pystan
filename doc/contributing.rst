@@ -2,15 +2,27 @@
 Contributing to PyStan
 ======================
 
-Introduction
-============
+**PyStan** provides a featherweight interface to C++ functions in the `Stan library`_.
+The interface provided is one which is familiar to Python users.
 
-PyStan is a Python interface to C++ functions in the `Stan library`_.
-Specifically, PyStan provides an interface to the C++ functions in the ``stan::services`` namespace.
+Goals:
 
-Stability and maintainability are two overriding goals of this software package.
-New features which make this software easier to maintain are welcome.
-Contributions which make the software more difficult to maintain are not welcome at this time.
+- **Power-to-weight.** Using a minimal amount of code, PyStan lets Python users access the most frequently-used features of the Stan C++ library.
+- **Timely releases.** PyStan releases appear within 72 hours of a Stan release.
+- **Minimize toil.** Maintaining PyStan should require as little time as possible. Contributions which make the software easier to maintain are welcome.
+
+Non-goals:
+
+- **Adding new features.** Contributions which make the software more difficult to maintain are not welcome. A plug-in interface allows third-party packages to extend the software.
+- **Supporting new platforms.** Adding new platforms and hardware architectures will only be considered when PyStan has an established track record of timely releases.
+
+If these goals and non-goals strike you as restrictive, we kindly remind you
+that PyStan is open source software which you are free to fork and customize.
+
+How to Make a Code Contribution
+===============================
+
+Code contributions must be readable and easy to understand.
 
 PyStan adopts virtually all the conventions and procedures discussed in Astropy's `How to make a
 code contribution`_.
