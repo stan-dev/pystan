@@ -41,5 +41,5 @@ def test_fit_cache_uncacheable():
     normal_posterior = stan.build(program_code)
     normal_posterior.sample()
     cache_size_after = shutil.disk_usage(cache_path()).used
-    # allow for a 4096 byte difference (an empty directory takes 4K)
-    assert abs(cache_size_before - cache_size_after) <= 4096
+    # allow for empty directories (4096 bytes on Linux) and other chance file creations.
+    assert abs(cache_size_before - cache_size_after) <= 16384
