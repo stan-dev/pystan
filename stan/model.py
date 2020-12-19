@@ -116,11 +116,13 @@ class Model:
             # progress bar needs to know some of these
             num_warmup = payload.get("num_warmup", arguments.lookup_default(arguments.Method["SAMPLE"], "num_warmup"))
             num_samples = payload.get(
-                "num_samples", arguments.lookup_default(arguments.Method["SAMPLE"], "num_samples"),
+                "num_samples",
+                arguments.lookup_default(arguments.Method["SAMPLE"], "num_samples"),
             )
             num_thin = payload.get("num_thin", arguments.lookup_default(arguments.Method["SAMPLE"], "num_thin"))
             save_warmup = payload.get(
-                "save_warmup", arguments.lookup_default(arguments.Method["SAMPLE"], "save_warmup"),
+                "save_warmup",
+                arguments.lookup_default(arguments.Method["SAMPLE"], "save_warmup"),
             )
             payloads.append(payload)
 
@@ -232,6 +234,42 @@ class Model:
             return asyncio.run(go())
         except KeyboardInterrupt:
             pass
+
+    def constrain_pars(
+        self, unconstrained_parameters: typing.List[float], include_tparams: bool = True, include_gqs: bool = True
+    ) -> typing.List[float]:
+        """Transform a sequence of unconstrained parameters to their defined support,
+           optionally including transformed parameters and generated quantities.
+
+        Arguments:
+            unconstrained_parameters: A sequence of unconstrained parameters.
+            include_tparams: Boolean to control whether we include transformed parameters.
+            include_gqs: Boolean to control whether we include generated quantities.
+
+        Returns: A sequence of constrained parameters, optionally including transformed parameters
+
+        Notes: The unconstrained parameters are passed to the write_array method of the Stan model.
+        """
+        assert isinstance(self.data, dict)
+        upar = {"upar": unconstrained_parameters}
+        upar = _make_json_serializable(upar)
+
+        payload = {"data": self.data}  # type: typing.Dict[str, typing.Union[typing.Dict, typing.List[float], bool]]
+        payload["unconstrained_parameters"] = upar["upar"]
+        payload["include_tparams"] = include_tparams
+        payload["include_gqs"] = include_gqs
+
+        async def go():
+            async with stan.common.httpstan_server() as (host, port):
+                write_array_url = f"http://{host}:{port}/v1/{self.model_name}/write_array"
+                async with aiohttp.request("POST", write_array_url, json=payload) as resp:
+                    response_payload = await resp.json()
+                    if resp.status != 200:
+                        raise RuntimeError(response_payload)
+                    params_r_constrained = (await resp.json())["params_r_constrained"]
+            return params_r_constrained
+
+        return asyncio.run(go())
 
 
 def build(program_code, data=None, random_seed=None):
