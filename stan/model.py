@@ -2,7 +2,7 @@ import asyncio
 import collections.abc
 import json
 import re
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import aiohttp
 import httpstan.models
@@ -234,6 +234,44 @@ class Model:
             return asyncio.run(go())
         except KeyboardInterrupt:
             return  # type: ignore
+
+    def constrain_pars(
+        self, unconstrained_parameters: List[float], include_tparams: bool = True, include_gqs: bool = True
+    ) -> List[float]:
+        """Transform a sequence of unconstrained parameters to their defined support,
+           optionally including transformed parameters and generated quantities.
+
+        Arguments:
+            unconstrained_parameters: A sequence of unconstrained parameters.
+            include_tparams: Boolean to control whether we include transformed parameters.
+            include_gqs: Boolean to control whether we include generated quantities.
+
+        Returns:
+            A sequence of constrained parameters, optionally including transformed parameters.
+
+        Note:
+            The unconstrained parameters are passed to the `write_array` method of the `model_base`
+            instance. See `model_base.hpp` in the Stan C++ library for details.
+        """
+        assert isinstance(self.data, dict)
+
+        payload = {
+            "data": self.data,
+            "unconstrained_parameters": unconstrained_parameters,
+            "include_tparams": include_tparams,
+            "include_gqs": include_gqs,
+        }
+
+        async def go():
+            async with stan.common.httpstan_server() as (host, port):
+                write_array_url = f"http://{host}:{port}/v1/{self.model_name}/write_array"
+                async with aiohttp.request("POST", write_array_url, json=payload) as resp:
+                    response_payload = await resp.json()
+                    if resp.status != 200:
+                        raise RuntimeError(response_payload)
+                    return (await resp.json())["params_r_constrained"]
+
+        return asyncio.run(go())
 
 
 def build(program_code, data=None, random_seed=None) -> Model:
