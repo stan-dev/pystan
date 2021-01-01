@@ -1,5 +1,5 @@
 import json
-from typing import Sequence
+from typing import cast, Tuple
 
 import numpy as np
 import simdjson
@@ -25,11 +25,11 @@ class Fit:
     # (2) `Fit` need not store full copies of the raw Stan output.
     def __init__(
         self,
-        stan_outputs: Sequence[bytes],
+        stan_outputs: Tuple[bytes, ...],
         num_chains: int,
-        param_names: Sequence[str],
-        constrained_param_names: Sequence[str],
-        dims: Sequence[Sequence[int]],
+        param_names: Tuple[str, ...],
+        constrained_param_names: Tuple[str, ...],
+        dims: Tuple[Tuple[int, ...]],
         num_warmup: int,
         num_samples: int,
         num_thin: int,
@@ -50,7 +50,7 @@ class Fit:
         # - "sample params" include `lp__`, `accept_stat__`
         # - "sampler params" include `stepsize__`, `treedepth__`, ...
         # These names are gathered later in this function by inspecting the output from Stan.
-        self.sample_and_sampler_param_names: Sequence[str]
+        self.sample_and_sampler_param_names: Tuple[str, ...]
 
         num_flat_params = sum(np.product(dims_ or 1) for dims_ in dims)  # if dims == [] then it is a scalar
         assert num_flat_params == len(constrained_param_names)
@@ -77,7 +77,7 @@ class Fit:
 
                     # for the first draw: collect sample and sampler parameter names.
                     if not hasattr(self, "_draws"):
-                        feature_names = tuple(msg["values"].keys())
+                        feature_names = cast(Tuple[str, ...], tuple(msg["values"].keys()))
                         self.sample_and_sampler_param_names = tuple(
                             name for name in feature_names if name.endswith("__")
                         )
@@ -168,7 +168,7 @@ class Fit:
             parts.append(f"Draws: {self._draws.shape[-2] * self._draws.shape[-1]}")
         return "\n".join(parts)
 
-    def _parameter_indexes(self, param: str) -> Sequence[int]:
+    def _parameter_indexes(self, param: str) -> Tuple[int, ...]:
         """Obtain indexes for values associated with `param`.
 
         A draw from the sampler is a flat vector of values. A multi-dimensional
@@ -198,7 +198,7 @@ class Fit:
         if param in self.constrained_param_names:
             return (sample_and_sampler_params_offset + self.constrained_param_names.index(param),)
 
-        def calculate_starts(dims: Sequence[Sequence[int]]) -> Sequence[int]:
+        def calculate_starts(dims: Tuple[Tuple[int, ...]]) -> Tuple[int, ...]:
             """Calculate starting indexes given dims."""
             s = [np.prod(d) for d in dims]
             starts = np.cumsum([0] + s)[: len(dims)]

@@ -2,7 +2,7 @@ import asyncio
 import collections.abc
 import json
 import re
-import typing
+from typing import Tuple, Optional
 
 
 import aiohttp
@@ -65,10 +65,10 @@ class Model:
         model_name: str,
         program_code: str,
         data: dict,
-        param_names: typing.Tuple[str],
-        constrained_param_names: typing.Tuple[str],
-        dims: typing.Tuple[typing.Tuple[int]],
-        random_seed: typing.Optional[int],
+        param_names: Tuple[str, ...],
+        constrained_param_names: Tuple[str, ...],
+        dims: Tuple[Tuple[int, ...]],
+        random_seed: Optional[int],
     ) -> None:
         if model_name != httpstan.models.calculate_model_name(program_code):
             raise ValueError("`model_name` does not match `program_code`.")
@@ -80,7 +80,7 @@ class Model:
         self.dims = dims
         self.random_seed = random_seed
 
-    def sample(self, **kwargs):
+    def sample(self, **kwargs) -> stan.fit.Fit:
         """Draw samples from the model.
 
         Parameters in ``kwargs`` will be passed to the default sample function in
@@ -106,11 +106,11 @@ class Model:
         for chain in range(1, num_chains + 1):
             payload = {"function": "stan::services::sample::hmc_nuts_diag_e_adapt"}
             payload.update(kwargs)
-            payload["chain"] = chain
-            payload["data"] = self.data
+            payload["chain"] = chain  # type: ignore
+            payload["data"] = self.data  # type: ignore
             payload["init"] = init.pop(0)
             if self.random_seed is not None:
-                payload["random_seed"] = self.random_seed
+                payload["random_seed"] = self.random_seed  # type: ignore
 
             # fit needs to know num_samples, num_warmup, num_thin, save_warmup
             # progress bar needs to know some of these
@@ -166,7 +166,7 @@ class Model:
                 progress_bar.set_message("Sampling finished.")
                 progress_bar.finish()
 
-                stan_outputs: typing.Sequence[bytes] = []
+                stan_outputs = []
                 for operation in operations:
                     fit_name = operation["result"].get("name")
                     if fit_name is None:  # operation["result"] is an error
@@ -176,6 +176,7 @@ class Model:
                         if resp.status != 200:
                             raise RuntimeError((await resp.json())["message"])
                         stan_outputs.append(await resp.read())
+                stan_outputs = tuple(stan_outputs)  # Fit constructor expects a tuple.
 
                 def is_nonempty_logger_message(msg: simdjson.Object):
                     return msg["topic"] == "logger" and msg["values"][0] != "info:"
@@ -231,10 +232,10 @@ class Model:
         try:
             return asyncio.run(go())
         except KeyboardInterrupt:
-            pass
+            return  # type: ignore
 
 
-def build(program_code, data=None, random_seed=None):
+def build(program_code, data=None, random_seed=None) -> Model:
     """Build (compile) a Stan program.
 
     Arguments:
@@ -292,4 +293,4 @@ def build(program_code, data=None, random_seed=None):
     try:
         return asyncio.run(go())
     except KeyboardInterrupt:
-        pass
+        return  # type: ignore
