@@ -20,18 +20,23 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install poetry and tox
-        run: pip install "poetry==1.0.10" tox
+      - name: Install poetry
+        run: pip install "poetry~=1.1.4"
 
       # export test dependencies from pyproject.toml, install them
       - name: Install dependencies
         run: |
-          poetry export -f requirements.txt --dev -o requirements.txt \
+          poetry export -f requirements.txt --without-hashes --dev -o requirements.txt \
           && pip install -r requirements.txt
 
+      - name: Build and Install wheel
+        run: |
+          poetry build -v
+          python -m pip install dist/*.whl
+
       - name: Check code
-        if: matrix.python-version == '3.8' && matrix.os == 'ubuntu-20.04'
-        run: tox
+        if: matrix.python-version == '3.8'
+        run: scripts/check
 
       - name: Run tests
-        run: poetry install -v && poetry run pytest -s -v tests
+        run: python -m pytest -s -v tests
