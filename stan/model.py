@@ -2,8 +2,7 @@ import asyncio
 import collections.abc
 import json
 import re
-from typing import Tuple, Optional
-
+from typing import Optional, Tuple
 
 import aiohttp
 import httpstan.models

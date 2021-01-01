@@ -3,7 +3,6 @@ import pytest
 
 import stan
 
-
 program_code = """
     data {
     int<lower=0> N;

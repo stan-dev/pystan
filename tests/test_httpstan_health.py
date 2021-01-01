@@ -1,5 +1,5 @@
-import pytest
 import aiohttp
+import pytest
 
 import stan
 

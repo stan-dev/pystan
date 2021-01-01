@@ -1,5 +1,5 @@
 import json
-from typing import cast, Tuple
+from typing import Tuple, cast
 
 import numpy as np
 import simdjson

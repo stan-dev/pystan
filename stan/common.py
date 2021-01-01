@@ -3,7 +3,6 @@ import contextlib
 import socket
 
 import aiohttp.web
-
 import httpstan.app
 
 
