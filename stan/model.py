@@ -115,11 +115,13 @@ class Model:
             # progress bar needs to know some of these
             num_warmup = payload.get("num_warmup", arguments.lookup_default(arguments.Method["SAMPLE"], "num_warmup"))
             num_samples = payload.get(
-                "num_samples", arguments.lookup_default(arguments.Method["SAMPLE"], "num_samples"),
+                "num_samples",
+                arguments.lookup_default(arguments.Method["SAMPLE"], "num_samples"),
             )
             num_thin = payload.get("num_thin", arguments.lookup_default(arguments.Method["SAMPLE"], "num_thin"))
             save_warmup = payload.get(
-                "save_warmup", arguments.lookup_default(arguments.Method["SAMPLE"], "save_warmup"),
+                "save_warmup",
+                arguments.lookup_default(arguments.Method["SAMPLE"], "save_warmup"),
             )
             payloads.append(payload)
 
