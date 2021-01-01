@@ -1,0 +1,10 @@
+#!/bin/bash
+set -euo pipefail
+
+SOURCE_FILES="stan tests"
+
+set -x
+
+autoflake --in-place --recursive $SOURCE_FILES
+isort $SOURCE_FILES
+black $SOURCE_FILES scripts doc

@@ -28,28 +28,27 @@ pysimdjson = "^3.1"
 numpy = "^1.7"
 clikit = "^0.6.2"
 
-# docs
-sphinx = { version = "^3.1.1", optional = true }
-sphinx-rtd-theme = { version = "^0.5", optional = true }
-
 [tool.poetry.dev-dependencies]
 pytest = "^5.4"
 pytest-cov = "^2.8"
 pytest-asyncio = "^0.10"
 pandas = "^1.0"
-
-[tool.poetry.extras]
-docs = ["sphinx", "sphinx-rtd-theme"]
+autoflake = "^1.4"
+black = "^20.8b1"
+isort = "^5.4.2"
+mypy = "0.782"
+flake8 = "^3.8.3"
+# documentation
+sphinx = "^3.1"
+sphinx-rtd-theme = "^0.5"
 
 [tool.black]
 line-length = 119
 
 [tool.isort]
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-line_length = 119
+profile = "black"
+combine_as_imports = true
+known_first_party = "stan,tests"
 
 [build-system]
 requires = ["poetry~=1.0"]

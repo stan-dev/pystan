@@ -1,0 +1,14 @@
+#!/bin/bash
+set -euo pipefail
+
+SOURCE_FILES="stan tests"
+
+set -x
+
+isort --check --diff $SOURCE_FILES
+black --check --diff $SOURCE_FILES
+flake8 $SOURCE_FILES
+mypy $SOURCE_FILES
+
+# verify building documentation succeeds
+python3 -m sphinx -T -W doc build/html
