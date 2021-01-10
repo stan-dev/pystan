@@ -127,9 +127,9 @@ class Model:
 
         async def go():
             io = ConsoleIO()
+            io.error_line("<info>Sampling...</info>")
             progress_bar = ProgressBar(io)
             progress_bar.set_format("very_verbose")
-            progress_bar.set_message("Sampling...")
 
             current_and_max_iterations_re = re.compile(r"Iteration:\s+(\d+)\s+/\s+(\d+)")
             async with stan.common.httpstan_server() as (host, port):
@@ -164,8 +164,9 @@ class Model:
                             current_iterations[operation["name"]] = iteration
                             progress_bar.set_progress(sum(current_iterations.values()))
                     await asyncio.sleep(0.01)
-                progress_bar.set_message("Sampling finished.")
-                progress_bar.finish()
+                # Sampling has finished. But we do not call `progress_bar.finish()` right
+                # now. First we write informational messages to the screen, then we
+                # redraw the (complete) progress bar. Only after that do we call `finish`.
 
                 stan_outputs = []
                 for operation in operations:
@@ -206,11 +207,16 @@ class Model:
                             nonstandard_logger_messages.append(msg.as_dict())
                 del parser  # simdjson.Parser is no longer used at this point.
 
+                progress_bar.clear()
+                io.error("\x08" * progress_bar._last_messages_length)  # move left to start of line
                 if nonstandard_logger_messages:
-                    io.error("\n<info>Messages received during sampling:</info>\n")
+                    io.error_line("<comment>Messages received during sampling:</comment>")
                     for msg in nonstandard_logger_messages:
                         text = msg["values"][0].replace("info:", "  ")
-                        io.error(f"<info>{text}</info>\n")
+                        io.error_line(f"{text}")
+                progress_bar.display()  # re-draw the (complete) progress bar
+                progress_bar.finish()
+                io.error_line("\n<info>Done.</info>")
 
                 # clean up after ourselves when fit is uncacheable (no random seed)
                 if self.random_seed is None:
@@ -270,7 +276,7 @@ def build(program_code, data=None, random_seed=None) -> Model:
             path, payload = f"/v1/{model_name}/params", {"data": data}
             async with aiohttp.request("POST", f"http://{host}:{port}{path}", json=payload) as resp:
                 model_in_cache = resp.status != 404
-            io.error_line(" Found model in cache." if model_in_cache else " This may take some time.")
+            io.error("\n" if model_in_cache else " This may take some time.\n")
             # Note: during compilation `httpstan` redirects stderr to /dev/null, making `print` impossible.
             path, payload = "/v1/models", {"program_code": program_code}
             async with aiohttp.request("POST", f"http://{host}:{port}{path}", json=payload) as resp:
@@ -279,7 +285,7 @@ def build(program_code, data=None, random_seed=None) -> Model:
                     raise RuntimeError(response_payload["message"])
                 assert model_name == response_payload["name"]
                 if response_payload.get("stanc_warnings"):
-                    io.error_line("<comment>Warnings from stanc:</comment>")
+                    io.error_line("<comment>Messages from <fg=cyan;options=bold>stanc</>:</comment>")
                     io.error_line(response_payload["stanc_warnings"])
             path, payload = f"/v1/{model_name}/params", {"data": data}
             async with aiohttp.request("POST", f"http://{host}:{port}{path}", json=payload) as resp:
@@ -289,6 +295,9 @@ def build(program_code, data=None, random_seed=None) -> Model:
             assert len({param["name"] for param in params_list}) == len(params_list)
             param_names, dims = zip(*((param["name"], param["dims"]) for param in params_list))
             constrained_param_names = sum((tuple(param["constrained_names"]) for param in params_list), ())
+            if model_in_cache:
+                io.error("<comment>Found model in cache.</comment> ")
+            io.error_line("<info>Done.</info>")
             return Model(model_name, program_code, data, param_names, constrained_param_names, dims, random_seed)
 
     try:
