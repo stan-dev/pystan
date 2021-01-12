@@ -279,6 +279,35 @@ class Model:
 
         return asyncio.run(go())
 
+    def unconstrain_pars(self, constrained_parameters: List[float]) -> List[float]:
+        """Reads constrained parameter values from their specified context and returns a
+           sequence of unconstrained parameter values.
+
+        Arguments:
+            constrained_parameters: Constrained parameter values and their specified context
+
+        Returns:
+            A sequence of unconstrained parameters.
+
+        Note:
+            The unconstrained parameters are passed to the `transform_inits` method of the
+            `model_base` instance. See `model_base.hpp` in the Stan C++ library for details.
+        """
+        assert isinstance(self.data, dict)
+
+        payload = {"data": self.data, "constrained_parameters": constrained_parameters}
+
+        async def go():
+            async with stan.common.httpstan_server() as (host, port):
+                write_array_url = f"http://{host}:{port}/v1/{self.model_name}/transform_inits"
+                async with aiohttp.request("POST", write_array_url, json=payload) as resp:
+                    response_payload = await resp.json()
+                    if resp.status != 200:
+                        raise RuntimeError(response_payload)
+                    return (await resp.json())["params_r_unconstrained"]
+
+        return asyncio.run(go())
+
 
 def build(program_code, data=None, random_seed=None) -> Model:
     """Build (compile) a Stan program.
