@@ -87,6 +87,10 @@ class Model:
         See the CmdStan documentation for parameter descriptions and default
         values.
 
+        `num_chains` is the lone PyStan-specific keyword argument. It indicates
+        the number of independent processes to use when drawing samples.
+        The default value is 1.
+
         Returns:
             Fit: instance of Fit allowing access to draws.
 
