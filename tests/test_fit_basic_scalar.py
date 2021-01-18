@@ -33,3 +33,14 @@ def test_fit_scalar_param(fit):
     y = fit["y"]
     assert y.shape == (1, num_samples * num_chains)
     assert 9 < np.mean(y) < 11
+
+
+def test_fit_mapping(fit):
+    # test Fit's `dict`-like functionality
+    params = [param for param in fit]
+    assert params == ["y"]
+    assert params == list(fit.keys())
+    assert fit["y"].mean() == list(fit.values()).pop().mean()
+    key, value = list(fit.items()).pop()
+    assert key == "y"
+    assert value.mean() == fit["y"].mean()

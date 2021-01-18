@@ -32,7 +32,7 @@ def fit(posterior):
 
 def test_bernoulli_sampling_thin(posterior):
     fit = posterior.sample(num_thin=2)
-    assert fit.values.shape[1] == 500
+    assert fit["theta"].shape[-1] == 500
 
 
 def test_bernoulli_sampling_invalid_argument(posterior):
@@ -45,22 +45,22 @@ def test_bernoulli_sampling(fit):
     assert fit.param_names == ("theta",)
     assert fit.num_chains == 4
 
-    assert fit.values.ndim == 3
-    assert fit.values.shape[1] == 1000
-    assert fit.values.shape[2] == 4
+    assert fit._draws.ndim == 3
+    assert fit._draws.shape[1] == 1000
+    assert fit._draws.shape[2] == 4
 
     assert len(fit) == 1  # one parameter (theta)
 
     # for a fit with only one scalar parameter, it is the last one
-    assert 0.1 < fit.values[-1, :, 0].mean() < 0.4
-    assert 0.1 < fit.values[-1, :, 1].mean() < 0.4
-    assert 0.1 < fit.values[-1, :, 2].mean() < 0.4
-    assert 0.1 < fit.values[-1, :, 3].mean() < 0.4
+    assert 0.1 < fit._draws[-1, :, 0].mean() < 0.4
+    assert 0.1 < fit._draws[-1, :, 1].mean() < 0.4
+    assert 0.1 < fit._draws[-1, :, 2].mean() < 0.4
+    assert 0.1 < fit._draws[-1, :, 3].mean() < 0.4
 
-    assert 0.01 < fit.values[-1, :, 0].var() < 0.02
-    assert 0.01 < fit.values[-1, :, 1].var() < 0.02
-    assert 0.01 < fit.values[-1, :, 2].var() < 0.02
-    assert 0.01 < fit.values[-1, :, 3].var() < 0.02
+    assert 0.01 < fit._draws[-1, :, 0].var() < 0.02
+    assert 0.01 < fit._draws[-1, :, 1].var() < 0.02
+    assert 0.01 < fit._draws[-1, :, 2].var() < 0.02
+    assert 0.01 < fit._draws[-1, :, 3].var() < 0.02
 
 
 def test_bernoulli_to_frame(fit):

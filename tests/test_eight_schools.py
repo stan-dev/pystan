@@ -59,7 +59,7 @@ def test_eight_schools_sample(posterior):
     num_chains, num_samples = 2, 200
     fit = posterior.sample(num_chains=num_chains, num_samples=num_samples, num_warmup=num_samples)
     num_flat_params = schools_data["J"] * 2 + 2
-    assert fit.values.shape == (
+    assert fit._draws.shape == (
         len(fit.sample_and_sampler_param_names) + num_flat_params,
         num_samples,
         num_chains,
