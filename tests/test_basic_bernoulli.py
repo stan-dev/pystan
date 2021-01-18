@@ -32,7 +32,7 @@ def fit(posterior):
 
 def test_bernoulli_sampling_thin(posterior):
     fit = posterior.sample(num_thin=2)
-    assert fit["theta"].shape[-1] == 500
+    assert fit["theta"].shape[-1] == 500 * 4
 
 
 def test_bernoulli_sampling_invalid_argument(posterior):

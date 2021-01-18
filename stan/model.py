@@ -83,7 +83,7 @@ class Model:
 
         `num_chains` is the lone PyStan-specific keyword argument. It indicates
         the number of independent processes to use when drawing samples.
-        The default value is 1.
+        The default value is 4.
 
         Returns:
             Fit: instance of Fit allowing access to draws.
@@ -92,7 +92,8 @@ class Model:
         assert "chain" not in kwargs, "`chain` id is set automatically."
         assert "data" not in kwargs, "`data` is set in `build`."
         assert "random_seed" not in kwargs, "`random_seed` is set in `build`."
-        num_chains = kwargs.pop("num_chains", 1)
+
+        num_chains = kwargs.pop("num_chains", 4)
 
         init = kwargs.pop("init", [dict() for _ in range(num_chains)])
         if len(init) != num_chains:

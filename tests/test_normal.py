@@ -15,10 +15,10 @@ def test_normal_sample():
     assert posterior is not None
     fit = posterior.sample()
     offset = len(fit.sample_and_sampler_param_names)
-    assert fit._draws.shape == (offset + 1, 1000, 1)  # 1 chain, n samples, 1 param
+    assert fit._draws.shape == (offset + 1, 1000, 4)  # 4 chains, n samples, 1 param
     df = fit.to_frame()
     assert (df["y"] == fit._draws[offset, :, :].ravel()).all()
-    assert len(df["y"]) == 1000
+    assert len(df["y"]) == 4000
     assert -0.01 < df["y"].mean() < 0.01
     assert -0.01 < df["y"].std() < 0.01
 
@@ -43,5 +43,5 @@ def test_normal_sample_args():
     assert posterior is not None
     fit = posterior.sample(num_samples=350, num_thin=2)
     df = fit.to_frame()
-    assert len(df["y"]) == 350 // 2
+    assert len(df["y"]) == 350 * 4 // 2
     assert -5 < df["y"].mean() < 5
