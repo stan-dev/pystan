@@ -1,21 +1,18 @@
+import collections
 import json
-from typing import Tuple, cast
+from typing import Generator, Tuple, cast
 
 import numpy as np
 import simdjson
 
 
-class Fit:
+class Fit(collections.abc.Mapping):
     """Stores draws from one or more chains.
-
-    The ``values`` attribute provides direct access to draws. More user-friendly
-    presentations of draws are available via the ``to_frame`` and ``to_xarray``
-    methods.
 
     Returned by methods of a ``Model``. Users will not instantiate this class directly.
 
-    Attributes:
-        values: An ndarray with shape (num_sample_and_sampler_params + num_flat_params, num_draws, num_chains)
+    A `Fit` instance works like a Python dictionary. Other user-friendly views of draws
+    are available via the ``to_frame`` and ``to_xarray`` methods.
 
     """
 
@@ -59,6 +56,8 @@ class Fit:
         # self._draws holds all the draws. We cannot allocate it before looking at the draws
         # because we do not know how many sampler-specific parameters are present. Later in this
         # function we count them and only then allocate the array for `self._draws`.
+        #
+        # _draws is an ndarray with shape (num_sample_and_sampler_params + num_flat_params, num_draws, num_chains)
         self._draws: np.ndarray
 
         parser = simdjson.Parser()
@@ -123,10 +122,6 @@ class Fit:
         return df
 
     @property
-    def values(self) -> np.ndarray:
-        return self._draws
-
-    @property
     def _finished(self) -> bool:
         return not self._draws.flags["WRITEABLE"]
 
@@ -139,15 +134,19 @@ class Fit:
         param_dim = [] if param in self.sample_and_sampler_param_names else self.dims[self.param_names.index(param)]
         # fmt: off
         num_samples_saved = (self.num_samples + self.num_warmup * self.save_warmup) // self.num_thin
-        assert self.values.shape == (len(self.sample_and_sampler_param_names) + len(self.constrained_param_names), num_samples_saved, self.num_chains)
+        assert self._draws.shape == (len(self.sample_and_sampler_param_names) + len(self.constrained_param_names), num_samples_saved, self.num_chains)
         # fmt: on
         # Stack chains together. Parameter is still stored flat.
-        view = self.values[param_indexes, :, :].reshape(len(param_indexes), -1).view()
+        view = self._draws[param_indexes, :, :].reshape(len(param_indexes), -1).view()
         assert view.shape == (len(param_indexes), num_samples_saved * self.num_chains)
         # reshape must yield something with least two dimensions
         reshape_args = param_dim + [-1] if param_dim else (1, -1)
         # reshape, recover the shape of the stan parameter
         return view.reshape(*reshape_args, order="F")
+
+    def __iter__(self) -> Generator[str, None, None]:
+        for name in self.param_names:
+            yield name
 
     def __len__(self) -> int:
         return len(self.param_names)
