@@ -21,7 +21,11 @@ intersphinx_mapping = {
     "python": ("http://python.readthedocs.io/en/latest/", None),
 }
 
-version = release = stan.__version__
+try:
+    version = release = stan.__version__
+except AttributeError:
+    # install the package to make `stan.__version__` available
+    version = release = "unknown-dev"
 
 ################################################################################
 # theme configuration
