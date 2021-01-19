@@ -1,0 +1,5 @@
+#!/bin/bash
+set -euo pipefail
+
+set -x
+python3 -m pytest -s -v tests
