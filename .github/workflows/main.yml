@@ -39,4 +39,4 @@ jobs:
         run: scripts/check
 
       - name: Run tests
-        run: python -m pytest -s -v tests
+        run: scripts/test
