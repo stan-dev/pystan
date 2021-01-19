@@ -216,8 +216,9 @@ class Model:
                 if nonstandard_logger_messages:
                     io.error_line("<comment>Messages received during sampling:</comment>")
                     for msg in nonstandard_logger_messages:
-                        text = msg["values"][0].replace("info:", "  ")
-                        io.error_line(f"{text}")
+                        text = msg["values"][0].replace("info:", "  ").replace("error:", "  ")
+                        if text.strip():
+                            io.error_line(f"{text}")
                 progress_bar.display()  # re-draw the (complete) progress bar
                 progress_bar.finish()
                 io.error_line("\n<info>Done.</info>")
