@@ -1,5 +1,6 @@
 import asyncio
 import collections.abc
+import dataclasses
 import json
 import re
 from typing import List, Optional, Tuple
@@ -52,6 +53,7 @@ def _make_json_serializable(data: dict) -> dict:
     return data
 
 
+@dataclasses.dataclass(frozen=True)
 class Model:
     """Stores data associated with and proxies calls to a Stan model.
 
@@ -59,25 +61,17 @@ class Model:
 
     """
 
-    def __init__(
-        self,
-        model_name: str,
-        program_code: str,
-        data: dict,
-        param_names: Tuple[str, ...],
-        constrained_param_names: Tuple[str, ...],
-        dims: Tuple[Tuple[int, ...]],
-        random_seed: Optional[int],
-    ) -> None:
-        if model_name != httpstan.models.calculate_model_name(program_code):
+    model_name: str
+    program_code: str
+    data: dict
+    param_names: Tuple[str, ...]
+    constrained_param_names: Tuple[str, ...]
+    dims: Tuple[Tuple[int, ...]]
+    random_seed: Optional[int]
+
+    def __post_init__(self):
+        if self.model_name != httpstan.models.calculate_model_name(self.program_code):
             raise ValueError("`model_name` does not match `program_code`.")
-        self.model_name = model_name
-        self.program_code = program_code
-        self.data = data or {}
-        self.param_names = param_names
-        self.constrained_param_names = constrained_param_names
-        self.dims = dims
-        self.random_seed = random_seed
 
     def sample(self, **kwargs) -> stan.fit.Fit:
         """Draw samples from the model.
