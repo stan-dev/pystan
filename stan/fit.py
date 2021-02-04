@@ -190,11 +190,11 @@ class Fit(collections.abc.Mapping):
 
         def calculate_starts(dims: Tuple[Tuple[int, ...]]) -> Tuple[int, ...]:
             """Calculate starting indexes given dims."""
-            s = [np.prod(d) for d in dims]
+            s = [cast(int, np.prod(d)) for d in dims]
             starts = np.cumsum([0] + s)[: len(dims)]
             return tuple(int(i) for i in starts)
 
         starts = tuple(sample_and_sampler_params_offset + i for i in calculate_starts(self.dims))
         names_index = self.param_names.index(param)
-        flat_param_count = np.prod(self.dims[names_index])
+        flat_param_count = cast(int, np.prod(self.dims[names_index]))
         return tuple(starts[names_index] + offset for offset in range(flat_param_count))
