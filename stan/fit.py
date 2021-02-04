@@ -93,13 +93,10 @@ class Fit(collections.abc.Mapping):
                     self._draws[:, draw_index, chain_index] = draw_row
                     draw_index += 1
             assert draw_index == num_samples_saved
-        # set draws array to read-only, also indicates we are finished
         assert self.sample_and_sampler_param_names and self._draws.size
         self._draws.flags["WRITEABLE"] = False
 
     def __contains__(self, key):
-        if not self._finished:
-            raise RuntimeError("Still collecting draws for fit.")
         return key in self.param_names
 
     def to_frame(self):
@@ -121,14 +118,8 @@ class Fit(collections.abc.Mapping):
         df.index.name, df.columns.name = "draws", "parameters"
         return df
 
-    @property
-    def _finished(self) -> bool:
-        return not self._draws.flags["WRITEABLE"]
-
     def __getitem__(self, param):
         """Returns array with shape (stan_dimensions, num_chains * num_samples)"""
-        if not self._finished:
-            raise RuntimeError("Still collecting draws for fit.")
         assert param.endswith("__") or param in self.param_names, param
         param_indexes = self._parameter_indexes(param)
         param_dim = [] if param in self.sample_and_sampler_param_names else self.dims[self.param_names.index(param)]
@@ -162,9 +153,9 @@ class Fit(collections.abc.Mapping):
             parts.append("Parameters:")
         for param_name, dims in zip(self.param_names, self.dims):
             parts.append(summarize_param(param_name, dims))
-        if self._finished:
-            # total draws is num_draws (per-chain) times num_chains
-            parts.append(f"Draws: {self._draws.shape[-2] * self._draws.shape[-1]}")
+
+        # total draws is num_draws (per-chain) times num_chains
+        parts.append(f"Draws: {self._draws.shape[-2] * self._draws.shape[-1]}")
         return "\n".join(parts)
 
     def _parameter_indexes(self, param: str) -> Tuple[int, ...]:
