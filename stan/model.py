@@ -89,7 +89,6 @@ class Model:
             Fit: instance of Fit allowing access to draws.
 
         """
-        assert isinstance(self.data, dict)
         assert "chain" not in kwargs, "`chain` id is set automatically."
         assert "data" not in kwargs, "`data` is set in `build`."
         assert "random_seed" not in kwargs, "`random_seed` is set in `build`."
@@ -194,7 +193,6 @@ class Model:
                 parser = simdjson.Parser()
                 nonstandard_logger_messages = []
                 for stan_output in stan_outputs:
-                    assert isinstance(stan_output, bytes)
                     for line in stan_output.splitlines():
                         # Do not attempt to parse non-logger messages. Draws could contain nan or inf values.
                         # simdjson cannot parse lines containing such values.
@@ -258,8 +256,6 @@ class Model:
             The unconstrained parameters are passed to the `write_array` method of the `model_base`
             instance. See `model_base.hpp` in the Stan C++ library for details.
         """
-        assert isinstance(self.data, dict)
-
         payload = {
             "data": self.data,
             "unconstrained_parameters": unconstrained_parameters,
@@ -292,8 +288,6 @@ class Model:
             The unconstrained parameters are passed to the `transform_inits` method of the
             `model_base` instance. See `model_base.hpp` in the Stan C++ library for details.
         """
-        assert isinstance(self.data, dict)
-
         payload = {"data": self.data, "constrained_parameters": constrained_parameters}
 
         async def go():
@@ -322,8 +316,6 @@ class Model:
             function in stan::model.
 
         """
-        assert isinstance(self.data, dict)
-
         payload = {
             "data": self.data,
             "unconstrained_parameters": unconstrained_parameters,
