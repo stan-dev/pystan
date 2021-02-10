@@ -9,8 +9,8 @@ authors = [
 license = "ISC"
 readme = "README.rst"
 homepage = "https://mc-stan.org"
-repository = "https://github.com/stan-dev/pystan-next"
-documentation = "https://pystan-next.readthedocs.io"
+repository = "https://github.com/stan-dev/pystan"
+documentation = "https://pystan.readthedocs.io"
 packages = [
     { include = "stan" },
 ]
