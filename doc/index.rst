@@ -79,4 +79,5 @@ Documentation
    installation
    upgrading
    reference
+   plugins
    contributing

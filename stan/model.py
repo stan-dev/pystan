@@ -17,6 +17,7 @@ from clikit.ui.components import ProgressBar
 
 import stan.common
 import stan.fit
+import stan.plugins
 
 
 def _make_json_serializable(data: dict) -> dict:
@@ -223,7 +224,7 @@ class Model:
                 progress_bar.finish()
                 io.error_line("\n<info>Done.</info>")
 
-            return stan.fit.Fit(
+            fit = stan.fit.Fit(
                 stan_outputs,
                 num_chains,
                 self.param_names,
@@ -234,6 +235,11 @@ class Model:
                 num_thin,
                 save_warmup,
             )
+
+            for entry_point in stan.plugins.get_plugins():
+                Plugin = entry_point.load()
+                fit = Plugin().on_post_fit(fit)
+            return fit
 
         try:
             return asyncio.run(go())

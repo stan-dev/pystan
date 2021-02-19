@@ -10,3 +10,6 @@ API Reference
 
 .. automodule:: stan.model
    :members: Model
+
+.. automodule:: stan.plugins
+   :members: PluginBase
