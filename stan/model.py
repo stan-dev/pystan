@@ -176,6 +176,13 @@ class Model:
                         if resp.status != 200:
                             raise RuntimeError((await resp.json())["message"])
                         stan_outputs.append(await resp.read())
+
+                    # clean up after ourselves when fit is uncacheable (no random seed)
+                    if self.random_seed is None:
+                        async with aiohttp.request("DELETE", f"http://{host}:{port}/v1/{fit_name}") as resp:
+                            if resp.status not in {200, 202, 204}:
+                                raise RuntimeError((await resp.json())["message"])
+
                 stan_outputs = tuple(stan_outputs)  # Fit constructor expects a tuple.
 
                 def is_nonempty_logger_message(msg: simdjson.Object):
@@ -215,12 +222,6 @@ class Model:
                 progress_bar.display()  # re-draw the (complete) progress bar
                 progress_bar.finish()
                 io.error_line("\n<info>Done.</info>")
-
-                # clean up after ourselves when fit is uncacheable (no random seed)
-                if self.random_seed is None:
-                    async with aiohttp.request("DELETE", f"http://{host}:{port}/v1/{fit_name}") as resp:
-                        if resp.status not in {200, 202, 204}:
-                            raise RuntimeError((await resp.json())["message"])
 
             return stan.fit.Fit(
                 stan_outputs,
