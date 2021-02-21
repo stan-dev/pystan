@@ -5,7 +5,6 @@ import json
 import re
 from typing import List, Optional, Tuple
 
-import aiohttp
 import httpstan.models
 import httpstan.schemas
 import httpstan.services.arguments as arguments
@@ -130,17 +129,16 @@ class Model:
             progress_bar.set_format("very_verbose")
 
             current_and_max_iterations_re = re.compile(r"Iteration:\s+(\d+)\s+/\s+(\d+)")
-            async with stan.common.httpstan_server() as (host, port):
-                fits_url = f"http://{host}:{port}/v1/{self.model_name}/fits"
+            async with stan.common.HttpstanClient() as client:
                 operations = []
                 for payload in payloads:
-                    async with aiohttp.request("POST", fits_url, json=payload) as resp:
-                        if resp.status == 422:
-                            raise ValueError(str(await resp.json()))
-                        elif resp.status != 201:
-                            raise RuntimeError((await resp.json())["message"])
-                        assert resp.status == 201
-                        operations.append(await resp.json())
+                    resp = await client.post(f"/{self.model_name}/fits", json=payload)
+                    if resp.status == 422:
+                        raise ValueError(str(resp.json()))
+                    elif resp.status != 201:
+                        raise RuntimeError(resp.json()["message"])
+                    assert resp.status == 201
+                    operations.append(resp.json())
 
                 # poll to get progress for each chain until all chains finished
                 current_iterations = {}
@@ -148,19 +146,19 @@ class Model:
                     for operation in operations:
                         if operation["done"]:
                             continue
-                        operation_name = operation["name"]
-                        async with aiohttp.request("GET", f"http://{host}:{port}/v1/{operation_name}") as resp:
-                            operation.update(await resp.json())
-                            progress_message = operation["metadata"].get("progress")
-                            if not progress_message:
-                                continue
-                            iteration, iteration_max = map(
-                                int, current_and_max_iterations_re.findall(progress_message).pop(0)
-                            )
-                            if not progress_bar.get_max_steps():  # i.e., has not started
-                                progress_bar.start(max=iteration_max * num_chains)
-                            current_iterations[operation["name"]] = iteration
-                            progress_bar.set_progress(sum(current_iterations.values()))
+                        resp = await client.get(f"/{operation['name']}")
+                        assert resp.status != 404
+                        operation.update(resp.json())
+                        progress_message = operation["metadata"].get("progress")
+                        if not progress_message:
+                            continue
+                        iteration, iteration_max = map(
+                            int, current_and_max_iterations_re.findall(progress_message).pop(0)
+                        )
+                        if not progress_bar.get_max_steps():  # i.e., has not started
+                            progress_bar.start(max=iteration_max * num_chains)
+                        current_iterations[operation["name"]] = iteration
+                        progress_bar.set_progress(sum(current_iterations.values()))
                     await asyncio.sleep(0.01)
                 # Sampling has finished. But we do not call `progress_bar.finish()` right
                 # now. First we write informational messages to the screen, then we
@@ -172,56 +170,56 @@ class Model:
                     if fit_name is None:  # operation["result"] is an error
                         assert not str(operation["result"]["code"]).startswith("2"), operation
                         raise RuntimeError(operation["result"]["message"])
-                    async with aiohttp.request("GET", f"http://{host}:{port}/v1/{fit_name}") as resp:
-                        if resp.status != 200:
-                            raise RuntimeError((await resp.json())["message"])
-                        stan_outputs.append(await resp.read())
+                    resp = await client.get(f"/{fit_name}")
+                    if resp.status != 200:
+                        raise RuntimeError((resp.json())["message"])
+                    stan_outputs.append(resp.content)
 
                     # clean up after ourselves when fit is uncacheable (no random seed)
                     if self.random_seed is None:
-                        async with aiohttp.request("DELETE", f"http://{host}:{port}/v1/{fit_name}") as resp:
-                            if resp.status not in {200, 202, 204}:
-                                raise RuntimeError((await resp.json())["message"])
+                        resp = await client.delete(f"/{fit_name}")
+                        if resp.status not in {200, 202, 204}:
+                            raise RuntimeError((resp.json())["message"])
 
-                stan_outputs = tuple(stan_outputs)  # Fit constructor expects a tuple.
+            stan_outputs = tuple(stan_outputs)  # Fit constructor expects a tuple.
 
-                def is_nonempty_logger_message(msg: simdjson.Object):
-                    return msg["topic"] == "logger" and msg["values"][0] != "info:"
+            def is_nonempty_logger_message(msg: simdjson.Object):
+                return msg["topic"] == "logger" and msg["values"][0] != "info:"
 
-                def is_iteration_or_elapsed_time_logger_message(msg: simdjson.Object):
-                    # Assumes `msg` is a message with topic `logger`.
-                    text = msg["values"][0]
-                    return (
-                        text.startswith("info:Iteration:")
-                        or text.startswith("info: Elapsed Time:")
-                        # this detects lines following "Elapsed Time:", part of a multi-line Stan message
-                        or text.startswith("info:" + " " * 15)
-                    )
+            def is_iteration_or_elapsed_time_logger_message(msg: simdjson.Object):
+                # Assumes `msg` is a message with topic `logger`.
+                text = msg["values"][0]
+                return (
+                    text.startswith("info:Iteration:")
+                    or text.startswith("info: Elapsed Time:")
+                    # this detects lines following "Elapsed Time:", part of a multi-line Stan message
+                    or text.startswith("info:" + " " * 15)
+                )
 
-                parser = simdjson.Parser()
-                nonstandard_logger_messages = []
-                for stan_output in stan_outputs:
-                    for line in stan_output.splitlines():
-                        # Do not attempt to parse non-logger messages. Draws could contain nan or inf values.
-                        # simdjson cannot parse lines containing such values.
-                        if b'"logger"' not in line:
-                            continue
-                        msg = parser.parse(line)
-                        if is_nonempty_logger_message(msg) and not is_iteration_or_elapsed_time_logger_message(msg):
-                            nonstandard_logger_messages.append(msg.as_dict())
-                del parser  # simdjson.Parser is no longer used at this point.
+            parser = simdjson.Parser()
+            nonstandard_logger_messages = []
+            for stan_output in stan_outputs:
+                for line in stan_output.splitlines():
+                    # Do not attempt to parse non-logger messages. Draws could contain nan or inf values.
+                    # simdjson cannot parse lines containing such values.
+                    if b'"logger"' not in line:
+                        continue
+                    msg = parser.parse(line)
+                    if is_nonempty_logger_message(msg) and not is_iteration_or_elapsed_time_logger_message(msg):
+                        nonstandard_logger_messages.append(msg.as_dict())
+            del parser  # simdjson.Parser is no longer used at this point.
 
-                progress_bar.clear()
-                io.error("\x08" * progress_bar._last_messages_length)  # move left to start of line
-                if nonstandard_logger_messages:
-                    io.error_line("<comment>Messages received during sampling:</comment>")
-                    for msg in nonstandard_logger_messages:
-                        text = msg["values"][0].replace("info:", "  ").replace("error:", "  ")
-                        if text.strip():
-                            io.error_line(f"{text}")
-                progress_bar.display()  # re-draw the (complete) progress bar
-                progress_bar.finish()
-                io.error_line("\n<info>Done.</info>")
+            progress_bar.clear()
+            io.error("\x08" * progress_bar._last_messages_length)  # move left to start of line
+            if nonstandard_logger_messages:
+                io.error_line("<comment>Messages received during sampling:</comment>")
+                for msg in nonstandard_logger_messages:
+                    text = msg["values"][0].replace("info:", "  ").replace("error:", "  ")
+                    if text.strip():
+                        io.error_line(f"{text}")
+            progress_bar.display()  # re-draw the (complete) progress bar
+            progress_bar.finish()
+            io.error_line("\n<info>Done.</info>")
 
             return stan.fit.Fit(
                 stan_outputs,
@@ -266,13 +264,11 @@ class Model:
         }
 
         async def go():
-            async with stan.common.httpstan_server() as (host, port):
-                write_array_url = f"http://{host}:{port}/v1/{self.model_name}/write_array"
-                async with aiohttp.request("POST", write_array_url, json=payload) as resp:
-                    response_payload = await resp.json()
-                    if resp.status != 200:
-                        raise RuntimeError(response_payload)
-                    return (await resp.json())["params_r_constrained"]
+            async with stan.common.HttpstanClient() as client:
+                resp = await client.post(f"/{self.model_name}/write_array", json=payload)
+                if resp.status != 200:
+                    raise RuntimeError(resp.json())
+                return resp.json()["params_r_constrained"]
 
         return asyncio.run(go())
 
@@ -293,13 +289,11 @@ class Model:
         payload = {"data": self.data, "constrained_parameters": constrained_parameters}
 
         async def go():
-            async with stan.common.httpstan_server() as (host, port):
-                write_array_url = f"http://{host}:{port}/v1/{self.model_name}/transform_inits"
-                async with aiohttp.request("POST", write_array_url, json=payload) as resp:
-                    response_payload = await resp.json()
-                    if resp.status != 200:
-                        raise RuntimeError(response_payload)
-                    return (await resp.json())["params_r_unconstrained"]
+            async with stan.common.HttpstanClient() as client:
+                resp = await client.post(f"/{self.model_name}/transform_inits", json=payload)
+                if resp.status != 200:
+                    raise RuntimeError(resp.json())
+                return resp.json()["params_r_unconstrained"]
 
         return asyncio.run(go())
 
@@ -325,13 +319,11 @@ class Model:
         }
 
         async def go():
-            async with stan.common.httpstan_server() as (host, port):
-                log_prob_url = f"http://{host}:{port}/v1/{self.model_name}/log_prob"
-                async with aiohttp.request("POST", log_prob_url, json=payload) as resp:
-                    response_payload = await resp.json()
-                    if resp.status != 200:
-                        raise RuntimeError(response_payload)
-                    return (await resp.json())["log_prob"]
+            async with stan.common.HttpstanClient() as client:
+                resp = await client.post(f"/{self.model_name}/log_prob", json=payload)
+                if resp.status != 200:
+                    raise RuntimeError(resp.json())
+                return resp.json()["log_prob"]
 
         return asyncio.run(go())
 
@@ -359,13 +351,11 @@ class Model:
         }
 
         async def go():
-            async with stan.common.httpstan_server() as (host, port):
-                log_prob_grad_url = f"http://{host}:{port}/v1/{self.model_name}/log_prob_grad"
-                async with aiohttp.request("POST", log_prob_grad_url, json=payload) as resp:
-                    response_payload = await resp.json()
-                    if resp.status != 200:
-                        raise RuntimeError(response_payload)
-                    return (await resp.json())["log_prob_grad"]
+            async with stan.common.HttpstanClient() as client:
+                resp = await client.post(f"/{self.model_name}/log_prob_grad", json=payload)
+                if resp.status != 200:
+                    raise RuntimeError(resp.json())
+                return resp.json()["log_prob_grad"]
 
         return asyncio.run(go())
 
@@ -398,28 +388,26 @@ def build(program_code, data=None, random_seed=None) -> Model:
     async def go():
         io = ConsoleIO()
         io.error("<info>Building...</info>")
-        async with stan.common.httpstan_server() as (host, port):
+        async with stan.common.HttpstanClient() as client:
             # Check to see if model is in cache.
             model_name = httpstan.models.calculate_model_name(program_code)
-            path, payload = f"/v1/{model_name}/params", {"data": data}
-            async with aiohttp.request("POST", f"http://{host}:{port}{path}", json=payload) as resp:
-                model_in_cache = resp.status != 404
+            resp = await client.post(f"/{model_name}/params", json={"data": data})
+            model_in_cache = resp.status != 404
             io.error("\n" if model_in_cache else " This may take some time.\n")
+
             # Note: during compilation `httpstan` redirects stderr to /dev/null, making `print` impossible.
-            path, payload = "/v1/models", {"program_code": program_code}
-            async with aiohttp.request("POST", f"http://{host}:{port}{path}", json=payload) as resp:
-                response_payload = await resp.json()
-                if resp.status != 201:
-                    raise RuntimeError(response_payload["message"])
-                assert model_name == response_payload["name"]
-                if response_payload.get("stanc_warnings"):
-                    io.error_line("<comment>Messages from <fg=cyan;options=bold>stanc</>:</comment>")
-                    io.error_line(response_payload["stanc_warnings"])
-            path, payload = f"/v1/{model_name}/params", {"data": data}
-            async with aiohttp.request("POST", f"http://{host}:{port}{path}", json=payload) as resp:
-                if resp.status != 200:
-                    raise RuntimeError((await resp.json())["message"])
-                params_list = (await resp.json())["params"]
+            resp = await client.post("/models", json={"program_code": program_code})
+            if resp.status != 201:
+                raise RuntimeError(resp.json()["message"])
+            assert model_name == resp.json()["name"]
+            if resp.json().get("stanc_warnings"):
+                io.error_line("<comment>Messages from <fg=cyan;options=bold>stanc</>:</comment>")
+                io.error_line(resp.json()["stanc_warnings"])
+
+            resp = await client.post(f"/{model_name}/params", json={"data": data})
+            if resp.status != 200:
+                raise RuntimeError(resp.json()["message"])
+            params_list = resp.json()["params"]
             assert len({param["name"] for param in params_list}) == len(params_list)
             param_names, dims = zip(*((param["name"], param["dims"]) for param in params_list))
             constrained_param_names = sum((tuple(param["constrained_names"]) for param in params_list), ())
