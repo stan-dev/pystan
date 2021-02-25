@@ -81,3 +81,4 @@ Documentation
    reference
    plugins
    contributing
+   faq
