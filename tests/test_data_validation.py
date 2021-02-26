@@ -22,8 +22,8 @@ def test_make_json_serializable():
 
 
 def test_make_json_serializable_numpy():
-    data = {"K": 3, "x": np.array([3, 4, 5])}
-    expected = {"K": 3, "x": [3, 4, 5]}
+    data = {"int": np.int32(3), "float": np.float64(3), "array": np.array([1, 2, 3])}
+    expected = {"int": 3, "float": 3.0, "array": [1, 2, 3]}
     assert stan.model._make_json_serializable(data) == expected
     assert json.dumps(stan.model._make_json_serializable(data))
 
