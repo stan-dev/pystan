@@ -127,6 +127,9 @@ class Fit(collections.abc.Mapping):
         num_samples_saved = (self.num_samples + self.num_warmup * self.save_warmup) // self.num_thin
         assert self._draws.shape == (len(self.sample_and_sampler_param_names) + len(self.constrained_param_names), num_samples_saved, self.num_chains)
         # fmt: on
+        if not len(param_indexes):
+            assert 0 in param_dim
+            return np.array([]).reshape(param_dim + [num_samples_saved * self.num_chains])
         # Stack chains together. Parameter is still stored flat.
         view = self._draws[param_indexes, :, :].reshape(len(param_indexes), -1).view()
         assert view.shape == (len(param_indexes), num_samples_saved * self.num_chains)
