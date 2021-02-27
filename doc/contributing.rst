@@ -9,11 +9,11 @@ Goals:
 
 - **Power-to-weight.** Using a minimal amount of code, PyStan lets Python users access the most frequently-used features of the Stan C++ library.
 - **Timely releases.** PyStan releases appear within 72 hours of a Stan release.
-- **Minimize toil.** Maintaining PyStan should require as little time as possible. Contributions which make the software easier to maintain are welcome.
+- **Minimize toil.** In order to guarantee timely releases and rapid bug fixing, maintaining PyStan should require as little time as possible. Contributions which make the software easier to maintain are welcome.
 
 Non-goals:
 
-- **Adding new features.** Contributions which make the software more difficult to maintain are not welcome. A plug-in interface allows third-party packages to extend the software.
+- **Adding new features.** PyStan prioritizes reliability over ease of use. Contributions which make the software more difficult to maintain are not welcome. A plug-in interface allows third-party packages to extend the software.
 - **Supporting new platforms.** Adding new platforms and hardware architectures will only be considered when PyStan has an established track record of timely releases.
 
 If these goals and non-goals strike you as restrictive, we kindly remind you
@@ -54,7 +54,7 @@ git commit messages must be formatted carefully in order to allow the automatic 
 You should also use the first line of your commit message to indicate the commit's "type". If it
 is a bugfix, the commit message should start with "fix:". If it is a new feature, the commit
 message should start with "feat:". This information makes reviewing patches and generating
-release notes easier. For a full list of common commit "types", consult the `Conventional Commits` specification.
+release notes easier. For a full list of common commit "types", consult the `Conventional Commits`_ specification.
 
 Commit messages must have a body.
 The body should elaborate on the summary.
@@ -67,7 +67,7 @@ In general, follow the `Astropy guidelines for git`_. Important reminders:
   should represent one logical set of changes.
 * Never merge changes from ``httpstan/main`` into your feature branch.
 
-.. _Conventional Commits: https://www.conventionalcommits.org/en/v1.0.0-beta.4/#summary
+.. _Conventional Commits: https://www.conventionalcommits.org/en/v1.0.0/
 .. _Astropy guidelines for git: https://astropy.readthedocs.io/en/latest/development/workflow/development_workflow.html#astropy-guidelines-for-git
 
 Contributor Covenant Code of Conduct

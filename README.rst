@@ -2,8 +2,6 @@
 PyStan
 ******
 
-**NOTE: This documentation describes a BETA release of PyStan 3.**
-
 **PyStan** is a Python interface to Stan, a package for Bayesian inference.
 
 Stan® is a state-of-the-art platform for statistical modeling and
@@ -21,9 +19,7 @@ Notable features of PyStan include:
 Getting started
 ===============
 
-**NOTE: BETA versions of PyStan 3 must be installed with ``pip install --pre pystan``.**
-
-Install PyStan with ``pip install pystan``.  (PyStan requires Python 3.7 or higher running on a Linux or macOS system.)
+Install PyStan with ``pip install pystan``. PyStan requires Python ≥3.7 running on Linux or macOS. You will also need a C++ compiler such as gcc ≥9.0 or clang ≥10.0.
 
 The following block of code shows how to use PyStan with a model which studied coaching effects across eight schools (see Section 5.5 of Gelman et al (2003)). This hierarchical model is often called the "eight schools" model.
 

@@ -11,8 +11,8 @@ class Fit(collections.abc.Mapping):
 
     Returned by methods of a ``Model``. Users will not instantiate this class directly.
 
-    A `Fit` instance works like a Python dictionary. Other user-friendly views of draws
-    are available via the ``to_frame`` and ``to_xarray`` methods.
+    A `Fit` instance works like a Python dictionary. A user-friendly views of draws
+    is available via ``to_frame``.
 
     """
 
