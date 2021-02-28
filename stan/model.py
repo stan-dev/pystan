@@ -351,8 +351,6 @@ class Model:
             The unconstrained parameters are passed to the log_prob_grad
             function in stan::model.
         """
-        assert isinstance(self.data, dict)
-
         payload = {
             "data": self.data,
             "unconstrained_parameters": unconstrained_parameters,
