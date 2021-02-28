@@ -48,7 +48,7 @@ def test_eight_schools_build_numpy(posterior):
     schools_data_alt = {
         "J": 8,
         "y": np.array([28, 8, -3, 7, -1, 1, 18, 12]),
-        "sigma": pd.Series([15, 10, 16, 11, 9, 11, 10, 18], name="sigma"),
+        "sigma": pd.Series([15, 10, 16, 11, 9, 11, 10, 18], name="sigma").values,
     }
     posterior_alt = stan.build(program_code, data=schools_data_alt)
     assert posterior_alt is not None

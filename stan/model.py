@@ -1,5 +1,4 @@
 import asyncio
-import collections.abc
 import dataclasses
 import json
 import re
@@ -21,38 +20,11 @@ import stan.plugins
 Data = Dict[str, Union[int, float, Sequence[Union[int, float]], np.ndarray]]
 
 
-def _make_json_serializable(data: Data) -> dict:
-    """Convert `data` with numpy.ndarray-like values to JSON-serializable form.
-
-    Returns a new dictionary.
-
-    Arguments:
-        data (dict): A Python dictionary or mapping providing the data for the
-            model. Variable names are the keys and the values are their
-            associated values. Default is an empty dictionary.
-
-    Returns:
-        dict: Copy of `data` dict with JSON-serializable values.
-    """
-    # no need for deep copy, we do not modify mutable items
-    data = data.copy()
-    for key, value in data.items():
-        # first, see if the value is already JSON-serializable
-        try:
-            json.dumps(value)
-        except TypeError:
-            pass
-        else:
-            continue
-        # numpy scalar
-        if isinstance(value, np.ndarray) and value.ndim == 0:
-            data[key] = np.asarray(value).tolist()
-        # numpy.ndarray, pandas.Series, and anything similar
-        elif isinstance(value, collections.abc.Collection):
-            data[key] = np.asarray(value).tolist()
-        else:
-            raise TypeError(f"Value associated with variable `{key}` is not JSON serializable.")
-    return data
+class DataJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -385,9 +357,8 @@ def build(program_code: str, data: Optional[Data] = None, random_seed: Optional[
         variable names; see the Stan User's Guide for a complete list.
 
     """
-    # _make_json_serializable returns a new dict, original `data` unchanged
-    data = _make_json_serializable(data) if data is not None else {}
-    assert all(not isinstance(value, np.ndarray) for value in data.values())
+    # `data` must be JSON-serializable in order to send to httpstan
+    data = json.loads(DataJSONEncoder().encode(data)) if data else {}
 
     async def go():
         io = ConsoleIO()
