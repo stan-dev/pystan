@@ -5,6 +5,7 @@ description = "Python interface to Stan, a package for Bayesian inference"
 authors = [
   "Allen Riddell <riddella@indiana.edu>",
   "Ari Hartikainen <ahartikainen@users.noreply.github.com>",
+  "Matthew Carter <m.j.carter2@liverpool.ac.uk>",
 ]
 license = "ISC"
 readme = "README.rst"
