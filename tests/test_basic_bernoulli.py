@@ -35,6 +35,12 @@ def test_bernoulli_sampling_thin(posterior):
     assert fit["theta"].shape[-1] == 500 * 4
 
 
+def test_bernoulli_fixed_param(posterior):
+    fit = posterior.fixed_param(num_thin=2)
+    assert fit["theta"].shape[-1] == 500 * 4
+    assert (fit["theta"][0] == fit["theta"]).all()
+
+
 def test_bernoulli_sampling_invalid_argument(posterior):
     with pytest.raises(TypeError, match=r"'float' object cannot be interpreted as an integer"):
         posterior.sample(num_thin=2.0)
