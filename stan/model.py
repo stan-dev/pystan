@@ -50,11 +50,11 @@ class Model:
     def sample(self, **kwargs) -> stan.fit.Fit:
         """Draw samples from the model.
 
-        Parameters in ``kwargs`` will be passed to the default sample function
-        in stan::services. The default sample function is currently
-        ``hmc_nuts_diag_e_adapt``.  Parameter names are identical to those used
-        in CmdStan.  See the CmdStan documentation for parameter descriptions
-        and default values.
+        Parameters in ``kwargs`` will be passed to the default sample function.
+        The default sample function is currently
+        ``stan::services::sample::hmc_nuts_diag_e_adapt``.  Parameter names are
+        identical to those used in CmdStan.  See the CmdStan documentation for
+        parameter descriptions and default values.
 
         There is one exception:  `num_chains`. `num_chains` is a
         PyStan-specific keyword argument. It indicates the number of
@@ -68,10 +68,10 @@ class Model:
         return self.hmc_nuts_diag_e_adapt(**kwargs)
 
     def hmc_nuts_diag_e_adapt(self, **kwargs) -> stan.fit.Fit:
-        """Draw samples from the model using ``stan::services::hmc_nuts_diag_e_adapt``.
+        """Draw samples from the model using ``stan::services::sample::hmc_nuts_diag_e_adapt``.
 
         Parameters in ``kwargs`` will be passed to the (Python wrapper of)
-        ``stan::services::hmc_nuts_diag_e_adapt``. Parameter names are
+        ``stan::services::sample::hmc_nuts_diag_e_adapt``. Parameter names are
         identical to those used in CmdStan.  See the CmdStan documentation for
         parameter descriptions and default values.
 
@@ -85,6 +85,26 @@ class Model:
 
         """
         kwargs["function"] = "stan::services::sample::hmc_nuts_diag_e_adapt"
+        return self._create_fit(kwargs)
+
+    def fixed_param(self, **kwargs) -> stan.fit.Fit:
+        """Draw samples from the model using ``stan::services::sample::fixed_param``.
+
+        Parameters in ``kwargs`` will be passed to the (Python wrapper of)
+        ``stan::services::sample::fixed_param``. Parameter names are
+        identical to those used in CmdStan.  See the CmdStan documentation for
+        parameter descriptions and default values.
+
+        There is one exception:  `num_chains`. `num_chains` is a
+        PyStan-specific keyword argument. It indicates the number of
+        independent processes to use when drawing samples.  The default value
+        is 4.
+
+        Returns:
+            Fit: instance of Fit allowing access to draws.
+
+        """
+        kwargs["function"] = "stan::services::sample::fixed_param"
         return self._create_fit(kwargs)
 
     def _create_fit(self, payload: dict) -> stan.fit.Fit:
