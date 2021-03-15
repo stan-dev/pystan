@@ -59,3 +59,27 @@ The following block of code shows how to use PyStan with a model which studied c
     fit = posterior.sample(num_chains=4, num_samples=1000)
     eta = fit["eta"]  # array with shape (8, 4000)
     df = fit.to_frame()  # pandas `DataFrame`
+
+
+Citation
+========
+
+We appreciate citations as they let us discover what people have been doing
+with the software. Citations also provide evidence of use which can help in
+obtaining grant funding.
+
+To cite PyStan in publications use:
+
+Riddell, A., Hartikainen, A., & Carter, M. (2021). PyStan (3.0.0). https://pypi.org/project/pystan
+
+Or use the following BibTeX entry::
+
+    @misc{pystan,
+      title = {pystan (3.0.0)},
+      author = {Riddell, Allen and Hartikainen, Ari and Carter, Matthew},
+      year = {2021},
+      month = mar,
+      howpublished = {PyPI}
+    }
+
+Please also cite Stan.
