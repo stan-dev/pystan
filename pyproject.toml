@@ -25,9 +25,9 @@ classifiers = [
 python = "^3.7"
 aiohttp = "^3.6"
 httpstan = "^4.3.2"
-pysimdjson = "^3.1"
+pysimdjson = "^3.2"
 numpy = "^1.7"
-clikit = "^0.6.2"
+clikit = "^0.6"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.4"
@@ -36,11 +36,11 @@ pytest-asyncio = "^0.10"
 pandas = "^1.0"
 autoflake = "^1.4"
 black = "^20.8b1"
-isort = "^5.4.2"
-mypy = "0.782"
-flake8 = "^3.8.3"
+isort = "^5.4"
+mypy = "0.812"
+flake8 = "^3.9"
 # documentation
-sphinx = "^3.1"
+sphinx = "^3.5"
 sphinx-rtd-theme = "^0.5"
 
 [tool.black]
