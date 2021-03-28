@@ -27,6 +27,12 @@ class DataJSONEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
+# superficial frozendict implementation. Only used for function signatures
+class frozendict(dict):
+    def __setitem__(self, key, value):
+        raise TypeError("'frozendict' object is immutable.")
+
+
 @dataclasses.dataclass(frozen=True)
 class Model:
     """Stores data associated with and proxies calls to a Stan model.
@@ -393,14 +399,15 @@ class Model:
         return asyncio.run(go())
 
 
-def build(program_code: str, data: Optional[Data] = None, random_seed: Optional[int] = None) -> Model:
+def build(program_code: str, data: Data = frozendict(), random_seed: Optional[int] = None) -> Model:
     """Build (compile) a Stan program.
 
     Arguments:
         program_code: Stan program code describing a Stan model.
         data: A Python dictionary or mapping providing the data for the
             model. Variable names are the keys and the values are their
-            associated values. Default is an empty dictionary.
+            associated values. Default is an empty dictionary, suitable
+            for Stan programs with no `data` block.
         random_seed: Random seed, a positive integer for random number
             generation. Used to make sure that results can be reproduced.
 
@@ -413,7 +420,7 @@ def build(program_code: str, data: Optional[Data] = None, random_seed: Optional[
 
     """
     # `data` must be JSON-serializable in order to send to httpstan
-    data = json.loads(DataJSONEncoder().encode(data)) if data else {}
+    data = json.loads(DataJSONEncoder().encode(data))
 
     async def go():
         io = ConsoleIO()
