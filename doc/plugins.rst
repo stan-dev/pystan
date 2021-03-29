@@ -37,10 +37,10 @@ You can define multiple plugins in the entry points section.  Note that the
 plugin name (here, `names`) is required but is unused.
 
 All :py:class:`stan.plugins.PluginBase` subclasses implement methods which define behavior associated with *events*.
-Currently, there is only one event supported, ``post_fit``.
+There is only one event supported, ``post_sample``.
 
-on_post_fit
------------
+on_post_sample
+--------------
 
 This method defines what happens when sampling has finished and a
 :py:class:`stan.fit.Fit` object is about to be returned to the user.  The
@@ -56,7 +56,11 @@ additional method or changing the behavior or an existing method.
 For example, if you wanted to print the names of parameters you would define a plugin as follows::
 
     class PrintParameterNames(stan.plugins.PluginBase):
-        def on_post_fit(self, fit):
+        def on_post_sample(self, fit, **kwargs):
             for key in fit:
                 print(key)
             return fit
+
+Note that `on_post_sample` accepts additional keyword arguments (``**kwargs``). Accepting
+keyword arguments like this will allow your plugin to be compatible with future versions of the package.
+Future versions of the package could, in principle, add additional arguments to `on_post_sample`.

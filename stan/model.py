@@ -271,7 +271,7 @@ class Model:
 
             for entry_point in stan.plugins.get_plugins():
                 Plugin = entry_point.load()
-                fit = Plugin().on_post_fit(fit)
+                fit = Plugin().on_post_sample(fit)
             return fit
 
         try:

@@ -25,7 +25,7 @@ class PluginBase(abc.ABC):
     # (<https://docs.openstack.org/stevedore>).  This plugin system follows
     # (approximately) the pattern stevedore labels `ExtensionManager`.
 
-    def on_post_fit(self, fit: stan.fit.Fit) -> stan.fit.Fit:
+    def on_post_sample(self, fit: stan.fit.Fit) -> stan.fit.Fit:
         """Called with Fit instance when sampling has finished.
 
         The plugin can report information about the samples
