@@ -8,9 +8,9 @@ program_code = "parameters {real y;} model {y ~ normal(0,1);}"
 
 
 class DummyPlugin(stan.plugins.PluginBase):
-    def on_post_fit(self, fit):
+    def on_post_sample(self, fit, **kwargs):
         """Do nothing other than print a string."""
-        print("In DummyPlugin `on_post_fit`.")
+        print("In DummyPlugin `on_post_sample`.")
         return fit
 
 
@@ -50,9 +50,9 @@ def test_dummy_plugin(monkeypatch, capsys, normal_posterior):
 
 
 class OtherDummyPlugin(stan.plugins.PluginBase):
-    def on_post_fit(self, fit):
+    def on_post_sample(self, fit, **kwargs):
         """Do nothing other than print a string."""
-        print("In OtherDummyPlugin `on_post_fit`.")
+        print("In OtherDummyPlugin `on_post_sample`.")
         return fit
 
 
