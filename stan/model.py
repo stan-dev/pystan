@@ -130,6 +130,7 @@ class Model:
         assert "random_seed" not in payload, "`random_seed` is set in `build`."
         assert "function" in payload
 
+        payload = json.loads(DataJSONEncoder().encode(payload))
         num_chains = payload.pop("num_chains", 4)
 
         init = payload.pop("init", [dict() for _ in range(num_chains)])
