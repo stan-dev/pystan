@@ -2,7 +2,7 @@ import asyncio
 import dataclasses
 import json
 import re
-from typing import Dict, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import httpstan.models
 import httpstan.schemas
@@ -70,6 +70,16 @@ class Model:
         Returns:
             Fit: instance of Fit allowing access to draws.
 
+        Examples:
+            User-defined initial values for parameters must be provided
+            for each chain. Typically they will be the same for each chain.
+            The following example shows how user-defined initial parameters
+            are provided:
+
+            >>> program_code = "parameters {real y;} model {y ~ normal(0,1);}"
+            >>> posterior = stan.build(program_code)
+            >>> fit = posterior.sample(num_chains=2, init=[{"y": 3}, {"y": 3}])
+
         """
         return self.hmc_nuts_diag_e_adapt(num_chains=num_chains, **kwargs)
 
@@ -134,6 +144,7 @@ class Model:
         payload = json.loads(DataJSONEncoder().encode(payload))
         num_chains = payload.pop("num_chains")
 
+        init: List[Data]
         init = payload.pop("init", [dict() for _ in range(num_chains)])
         if len(init) != num_chains:
             raise ValueError("Initial values must be provided for each chain.")
