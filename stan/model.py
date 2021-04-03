@@ -53,7 +53,7 @@ class Model:
         if self.model_name != httpstan.models.calculate_model_name(self.program_code):
             raise ValueError("`model_name` does not match `program_code`.")
 
-    def sample(self, **kwargs) -> stan.fit.Fit:
+    def sample(self, *, num_chains=4, **kwargs) -> stan.fit.Fit:
         """Draw samples from the model.
 
         Parameters in ``kwargs`` will be passed to the default sample function.
@@ -64,16 +64,16 @@ class Model:
 
         There is one exception:  `num_chains`. `num_chains` is a
         PyStan-specific keyword argument. It indicates the number of
-        independent processes to use when drawing samples.  The default value
-        is 4.
+        independent processes to use when drawing samples.
+
 
         Returns:
             Fit: instance of Fit allowing access to draws.
 
         """
-        return self.hmc_nuts_diag_e_adapt(**kwargs)
+        return self.hmc_nuts_diag_e_adapt(num_chains=num_chains, **kwargs)
 
-    def hmc_nuts_diag_e_adapt(self, **kwargs) -> stan.fit.Fit:
+    def hmc_nuts_diag_e_adapt(self, *, num_chains=4, **kwargs) -> stan.fit.Fit:
         """Draw samples from the model using ``stan::services::sample::hmc_nuts_diag_e_adapt``.
 
         Parameters in ``kwargs`` will be passed to the (Python wrapper of)
@@ -83,17 +83,17 @@ class Model:
 
         There is one exception:  `num_chains`. `num_chains` is a
         PyStan-specific keyword argument. It indicates the number of
-        independent processes to use when drawing samples.  The default value
-        is 4.
+        independent processes to use when drawing samples.
 
         Returns:
             Fit: instance of Fit allowing access to draws.
 
         """
+        kwargs["num_chains"] = num_chains
         kwargs["function"] = "stan::services::sample::hmc_nuts_diag_e_adapt"
         return self._create_fit(kwargs)
 
-    def fixed_param(self, **kwargs) -> stan.fit.Fit:
+    def fixed_param(self, *, num_chains=4, **kwargs) -> stan.fit.Fit:
         """Draw samples from the model using ``stan::services::sample::fixed_param``.
 
         Parameters in ``kwargs`` will be passed to the (Python wrapper of)
@@ -103,13 +103,13 @@ class Model:
 
         There is one exception:  `num_chains`. `num_chains` is a
         PyStan-specific keyword argument. It indicates the number of
-        independent processes to use when drawing samples.  The default value
-        is 4.
+        independent processes to use when drawing samples.
 
         Returns:
             Fit: instance of Fit allowing access to draws.
 
         """
+        kwargs["num_chains"] = num_chains
         kwargs["function"] = "stan::services::sample::fixed_param"
         return self._create_fit(kwargs)
 
@@ -130,8 +130,9 @@ class Model:
         assert "random_seed" not in payload, "`random_seed` is set in `build`."
         assert "function" in payload
 
+        # copy kwargs and verify everything is JSON-encodable
         payload = json.loads(DataJSONEncoder().encode(payload))
-        num_chains = payload.pop("num_chains", 4)
+        num_chains = payload.pop("num_chains")
 
         init = payload.pop("init", [dict() for _ in range(num_chains)])
         if len(init) != num_chains:

@@ -78,3 +78,10 @@ def test_eight_schools_parameter_indexes(posterior):
     assert fit._parameter_indexes("tau") == (offset + 1,)
     assert fit._parameter_indexes("eta") == tuple(offset + i for i in (2, 3, 4, 5, 6, 7, 8, 9))
     assert fit._parameter_indexes("theta") == tuple(offset + i for i in (10, 11, 12, 13, 14, 15, 16, 17))
+
+
+def test_eight_schools_positional_argument(posterior):
+    """`sample` does not allow positional arguments."""
+    num_chains = 2
+    with pytest.raises(TypeError, match=r"sample\(\) takes 1 positional argument"):
+        posterior.sample(num_chains)
