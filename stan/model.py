@@ -99,9 +99,8 @@ class Model:
             Fit: instance of Fit allowing access to draws.
 
         """
-        kwargs["num_chains"] = num_chains
-        kwargs["function"] = "stan::services::sample::hmc_nuts_diag_e_adapt"
-        return self._create_fit(kwargs)
+        function = "stan::services::sample::hmc_nuts_diag_e_adapt"
+        return self._create_fit(function=function, num_chains=num_chains, **kwargs)
 
     def fixed_param(self, *, num_chains=4, **kwargs) -> stan.fit.Fit:
         """Draw samples from the model using ``stan::services::sample::fixed_param``.
@@ -119,38 +118,39 @@ class Model:
             Fit: instance of Fit allowing access to draws.
 
         """
-        kwargs["num_chains"] = num_chains
-        kwargs["function"] = "stan::services::sample::fixed_param"
-        return self._create_fit(kwargs)
+        function = "stan::services::sample::fixed_param"
+        return self._create_fit(function=function, num_chains=num_chains, **kwargs)
 
-    def _create_fit(self, payload: dict) -> stan.fit.Fit:
+    def _create_fit(self, *, function, num_chains, **kwargs) -> stan.fit.Fit:
         """Make a request to httpstan's ``create_fit`` endpoint and process results.
 
         Users should not use this function.
 
-        Arguments:
-            payload: dict whose JSON-encoded contents will be sent as the request body.
+        Parameters in ``kwargs`` will be passed to the (Python wrapper of)
+        `function`. Parameter names are identical to those used in CmdStan.
+        See the CmdStan documentation for parameter descriptions and default
+        values.
 
         Returns:
             Fit: instance of Fit allowing access to draws.
 
         """
-        assert "chain" not in payload, "`chain` id is set automatically."
-        assert "data" not in payload, "`data` is set in `build`."
-        assert "random_seed" not in payload, "`random_seed` is set in `build`."
-        assert "function" in payload
+        assert "chain" not in kwargs, "`chain` id is set automatically."
+        assert "data" not in kwargs, "`data` is set in `build`."
+        assert "random_seed" not in kwargs, "`random_seed` is set in `build`."
 
         # copy kwargs and verify everything is JSON-encodable
-        payload = json.loads(DataJSONEncoder().encode(payload))
-        num_chains = payload.pop("num_chains")
+        kwargs = json.loads(DataJSONEncoder().encode(kwargs))
 
-        init: List[Data]
-        init = payload.pop("init", [dict() for _ in range(num_chains)])
+        # FIXME: special handling here for `init`, consistent with PyStan 2 but needs docs
+        init: List[Data] = kwargs.pop("init", [dict() for _ in range(num_chains)])
         if len(init) != num_chains:
             raise ValueError("Initial values must be provided for each chain.")
 
         payloads = []
         for chain in range(1, num_chains + 1):
+            payload = kwargs.copy()
+            payload["function"] = function
             payload["chain"] = chain  # type: ignore
             payload["data"] = self.data  # type: ignore
             payload["init"] = init.pop(0)
@@ -169,7 +169,7 @@ class Model:
                 "save_warmup",
                 arguments.lookup_default(arguments.Method["SAMPLE"], "save_warmup"),
             )
-            payloads.append(payload.copy())
+            payloads.append(payload)
 
         async def go():
             io = ConsoleIO()
