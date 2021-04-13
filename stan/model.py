@@ -169,7 +169,7 @@ class Model:
                 "save_warmup",
                 arguments.lookup_default(arguments.Method["SAMPLE"], "save_warmup"),
             )
-            payloads.append(payload)
+            payloads.append(payload.copy())
 
         async def go():
             io = ConsoleIO()
