@@ -1,0 +1,7 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question on the Stan Forums
+    url: https://discourse.mc-stan.org/
+  - name: Blank issue
+    url: https://github.com/stan-dev/pystan/issues/new
+    about: Please note that the Stan Forums should be used in most cases
