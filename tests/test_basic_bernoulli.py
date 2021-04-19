@@ -96,3 +96,20 @@ def test_bernoulli_random_seed_same():
 def test_bernoulli_random_seed_different(posterior):
     fits = [stan.build(program_code, data=data, random_seed=seed).sample() for seed in (1, 2)]
     assert not np.allclose(*[fit["theta"] for fit in fits])
+
+
+def test_bernoulli_different_chains(posterior):
+    fit = posterior.sample(num_chains=2)
+    assert fit.num_chains == 2
+
+    # for a fit with only one scalar parameter, it is the last one
+    theta_chain_1 = fit._draws[-1, :, 0]
+    theta_chain_2 = fit._draws[-1, :, 1]
+    assert not np.allclose(theta_chain_1, theta_chain_2)
+
+    # should also hold when using a random seed
+    del fit
+    fit = stan.build(program_code, data=data, random_seed=42).sample(num_chains=2)
+    theta_chain_1 = fit._draws[-1, :, 0]
+    theta_chain_2 = fit._draws[-1, :, 1]
+    assert not np.allclose(theta_chain_1, theta_chain_2)
