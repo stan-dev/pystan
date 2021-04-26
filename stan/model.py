@@ -214,20 +214,19 @@ class Model:
                         )
                     await asyncio.sleep(0.01)
 
-                sampling_output.clear()
                 fit_in_cache = len(current_iterations) < num_chains
-                sampling_output.write_line(
-                    "<info>Sampling:</info> 100%, done."
-                    if fit_in_cache
-                    else f"<info>Sampling:</info> {percent_complete:3.0f}% ({iterations_count}/{total_iterations}), done."
-                )
 
                 stan_outputs = []
                 for operation in operations:
                     fit_name = operation["result"].get("name")
                     if fit_name is None:  # operation["result"] is an error
                         assert not str(operation["result"]["code"]).startswith("2"), operation
-                        raise RuntimeError(operation["result"]["message"])
+                        message = operation["result"]["message"]
+                        if """ValueError('Initialization failed.')""" in message:
+                            sampling_output.clear()
+                            sampling_output.write_line("<info>Sampling:</info> <error>Initialization failed.</error>")
+                            raise RuntimeError("Initialization failed.")
+                        raise RuntimeError(message)
                     resp = await client.get(f"/{fit_name}")
                     if resp.status != 200:
                         raise RuntimeError((resp.json())["message"])
@@ -238,6 +237,13 @@ class Model:
                         resp = await client.delete(f"/{fit_name}")
                         if resp.status not in {200, 202, 204}:
                             raise RuntimeError((resp.json())["message"])
+
+                sampling_output.clear()
+                sampling_output.write_line(
+                    "<info>Sampling:</info> 100%, done."
+                    if fit_in_cache
+                    else f"<info>Sampling:</info> {percent_complete:3.0f}% ({iterations_count}/{total_iterations}), done."
+                )
 
             stan_outputs = tuple(stan_outputs)  # Fit constructor expects a tuple.
 
