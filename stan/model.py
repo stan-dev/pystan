@@ -205,13 +205,13 @@ class Model:
                             int, current_and_max_iterations_re.findall(progress_message).pop(0)
                         )
                         current_iterations[operation["name"]] = iteration
-                    iterations_count = sum(current_iterations.values())
-                    total_iterations = iteration_max * num_chains
-                    percent_complete = 100 * iterations_count / total_iterations
-                    sampling_output.clear()
-                    sampling_output.write_line(
-                        f"<comment>Sampling:</comment> {round(percent_complete):3.0f}% ({iterations_count}/{total_iterations})"
-                    )
+                        iterations_count = sum(current_iterations.values())
+                        total_iterations = iteration_max * num_chains
+                        percent_complete = 100 * iterations_count / total_iterations
+                        sampling_output.clear()
+                        sampling_output.write_line(
+                            f"<comment>Sampling:</comment> {round(percent_complete):3.0f}% ({iterations_count}/{total_iterations})"
+                        )
                     await asyncio.sleep(0.01)
 
                 sampling_output.clear()
