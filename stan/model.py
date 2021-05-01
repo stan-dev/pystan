@@ -227,6 +227,7 @@ class Model:
                             sampling_output.write_line("<info>Sampling:</info> <error>Initialization failed.</error>")
                             raise RuntimeError("Initialization failed.")
                         raise RuntimeError(message)
+
                     resp = await client.get(f"/{fit_name}")
                     if resp.status != 200:
                         raise RuntimeError((resp.json())["message"])
@@ -470,7 +471,19 @@ def build(program_code: str, data: Data = frozendict(), random_seed: Optional[in
             resp = task.result()
 
             if resp.status != 201:
-                raise RuntimeError(resp.json()["message"])
+                match = re.search(r"""ValueError\(['"](.*)['"]\)""", resp.json()["message"])
+                if not match:  # unknown error, should not happen
+                    raise RuntimeError(resp.json()["message"])
+                exception_body = match.group(1).encode().decode("unicode_escape")
+                error_type_match = re.match(r"(Semantic|Syntax) error", exception_body)
+                if error_type_match:
+                    error_type = error_type_match.group(0)
+                    exception_body_without_first_line = exception_body.split("\n", 1)[1]
+                    building_output.write_line(f"<info>Building:</info> <error>{error_type}:</error>")
+                    building_output.write_line(f"<error>{exception_body_without_first_line}</error>")
+                    raise ValueError(error_type)
+                else:
+                    raise RuntimeError(exception_body)
             building_output.clear()
             if model_in_cache:
                 building_output.write("<info>Building:</info> found in cache, done.")

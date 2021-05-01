@@ -14,13 +14,13 @@ def test_build_basic():
 
 def test_stanc_no_such_distribution():
     program_code = "parameters {real z;} model {z ~ no_such_distribution();}"
-    with pytest.raises(RuntimeError, match=r"Semantic error in"):
+    with pytest.raises(ValueError, match=r"Semantic error"):
         stan.build(program_code=program_code)
 
 
 def test_stanc_invalid_assignment():
     program_code = "parameters {real z;} model {z = 3;}"
-    with pytest.raises(RuntimeError, match=r"Semantic error in"):
+    with pytest.raises(ValueError, match=r"Semantic error"):
         stan.build(program_code=program_code)
 
 
@@ -34,5 +34,5 @@ def test_stanc_exception_semicolon():
         z ~ normal(0, 1);
         y ~ normal(0, 1);}
     """
-    with pytest.raises(RuntimeError, match=r"Syntax error in"):
+    with pytest.raises(ValueError, match=r"Syntax error"):
         stan.build(program_code=program_code)
