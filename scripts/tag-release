@@ -1,0 +1,13 @@
+#!/bin/bash
+set -euo pipefail
+
+KEYID=85107A96512971B8C55932085D5D0CFF0A51A83D
+
+# check that "Bump version" appears in most recent commit
+git log -1 | grep -q -s version
+
+VERSION=$(grep '^version' pyproject.toml | sed 's/version = "\([^"]\+\)"/\1/')
+read -r -p "About to create tag for $VERSION. Abort with control-c."
+git tag -s -u "$KEYID" "$VERSION" -m"pystan $VERSION"
+echo "Commit tagged. Next step is to push the tag upstream. Run something like the following:"
+echo -e "\ngit push upstream $VERSION\n"
