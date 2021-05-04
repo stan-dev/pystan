@@ -208,7 +208,7 @@ class Model:
                         iterations_count = sum(current_iterations.values())
                         total_iterations = iteration_max * num_chains
                         percent_complete = 100 * iterations_count / total_iterations
-                        sampling_output.clear()
+                        sampling_output.clear() if io.supports_ansi() else sampling_output.write("\n")
                         sampling_output.write_line(
                             f"<comment>Sampling:</comment> {round(percent_complete):3.0f}% ({iterations_count}/{total_iterations})"
                         )
@@ -239,12 +239,14 @@ class Model:
                         if resp.status not in {200, 202, 204}:
                             raise RuntimeError((resp.json())["message"])
 
-                sampling_output.clear()
+                sampling_output.clear() if io.supports_ansi() else sampling_output.write("\n")
                 sampling_output.write_line(
                     "<info>Sampling:</info> 100%, done."
                     if fit_in_cache
                     else f"<info>Sampling:</info> {percent_complete:3.0f}% ({iterations_count}/{total_iterations}), done."
                 )
+                if not io.supports_ansi():
+                    sampling_output.write("\n")
 
             stan_outputs = tuple(stan_outputs)  # Fit constructor expects a tuple.
 
@@ -450,7 +452,8 @@ def build(program_code: str, data: Data = frozendict(), random_seed: Optional[in
         io = ConsoleIO()
         # hack: use stdout instead of stderr because httpstan silences stderr during compilation
         building_output = io.section().output
-        building_output.write("<comment>Building:</comment>")
+        if not io.supports_ansi():
+            building_output.write("<comment>Building...</comment>")
         async with stan.common.HttpstanClient() as client:
             # Check to see if model is in cache.
             model_name = httpstan.models.calculate_model_name(program_code)
@@ -463,9 +466,10 @@ def build(program_code: str, data: Data = frozendict(), random_seed: Optional[in
                 done, pending = await asyncio.wait({task}, timeout=0.1)
                 if done:
                     break
-                building_output.clear()
-                building_output.write(f"<comment>Building:</comment> {time.time() - start:0.1f}s")
-            building_output.clear()
+                if io.supports_ansi():
+                    building_output.clear()
+                    building_output.write(f"<comment>Building:</comment> {time.time() - start:0.1f}s")
+            building_output.clear() if io.supports_ansi() else building_output.write("\n")
             # now that httpstan has released stderr, we can use error_output again
             building_output = io.section().error_output
             resp = task.result()
@@ -484,7 +488,7 @@ def build(program_code: str, data: Data = frozendict(), random_seed: Optional[in
                     raise ValueError(error_type)
                 else:
                     raise RuntimeError(exception_body)
-            building_output.clear()
+            building_output.clear() if io.supports_ansi() else building_output.write("\n")
             if model_in_cache:
                 building_output.write("<info>Building:</info> found in cache, done.")
             else:
