@@ -191,6 +191,7 @@ class Model:
 
                 # poll to get progress for each chain until all chains finished
                 current_iterations = {}
+                previous_iteration_count = None
                 while not all(operation["done"] for operation in operations):
                     for operation in operations:
                         if operation["done"]:
@@ -208,10 +209,12 @@ class Model:
                         iterations_count = sum(current_iterations.values())
                         total_iterations = iteration_max * num_chains
                         percent_complete = 100 * iterations_count / total_iterations
-                        sampling_output.clear() if io.supports_ansi() else sampling_output.write("\n")
-                        sampling_output.write_line(
-                            f"<comment>Sampling:</comment> {round(percent_complete):3.0f}% ({iterations_count}/{total_iterations})"
-                        )
+                        if previous_iteration_count is None or iterations_count > previous_iteration_count:
+                            sampling_output.clear() if io.supports_ansi() else sampling_output.write("\n")
+                            sampling_output.write_line(
+                                f"<comment>Sampling:</comment> {round(percent_complete):3.0f}% ({iterations_count}/{total_iterations})"
+                            )
+                            previous_iteration_count = iterations_count
                     await asyncio.sleep(0.01)
 
                 fit_in_cache = len(current_iterations) < num_chains
