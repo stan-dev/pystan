@@ -402,10 +402,9 @@ class Model:
 
         Arguments:
             unconstrained_parameters: A sequence of unconstrained parameters.
-            adjust_transform: Apply jacobian adjust transform.
 
         Returns:
-            The gradient of the log posterior evalauted at the
+            The gradient of the log posterior evaluated at the
             unconstrained parameters.
 
         Notes:
