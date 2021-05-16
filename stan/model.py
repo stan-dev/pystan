@@ -204,6 +204,8 @@ class Model:
                         iteration, iteration_max = map(
                             int, current_and_max_iterations_re.findall(progress_message).pop(0)
                         )
+                        if current_iterations.get(operation["name"]) == iteration:
+                            continue
                         current_iterations[operation["name"]] = iteration
                         iterations_count = sum(current_iterations.values())
                         total_iterations = iteration_max * num_chains
@@ -212,7 +214,7 @@ class Model:
                         sampling_output.write_line(
                             f"<comment>Sampling:</comment> {round(percent_complete):3.0f}% ({iterations_count}/{total_iterations})"
                         )
-                    await asyncio.sleep(0.01)
+                    await asyncio.sleep(0.05)
 
                 fit_in_cache = len(current_iterations) < num_chains
 
