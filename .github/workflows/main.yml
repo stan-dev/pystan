@@ -5,12 +5,20 @@ on: [push, pull_request]
 jobs:
   tests:
     name: pystan tests
-    runs-on: ${{ matrix.os }}
     timeout-minutes: 20
+    runs-on: ${{ matrix.runs-on }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-10.15]
-        python-version: [3.7, 3.8, 3.9]
+        include:
+          - {runs-on: ubuntu-20.04, python-version: 3.7}
+          - {runs-on: ubuntu-20.04, python-version: 3.8}
+          - {runs-on: ubuntu-20.04, python-version: 3.9}
+          - {runs-on: macos-10.15, python-version: 3.7}
+          - {runs-on: macos-10.15, python-version: 3.8}
+          - {runs-on: macos-10.15, python-version: 3.9}
+          - {runs-on: ubuntu-20.04, container: "ubuntu:latest", python-version: 3.8}
+          - {runs-on: ubuntu-20.04, container: "fedora:latest", python-version: 3.8}
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
