@@ -24,6 +24,21 @@ requires a considerable investment of resources. If you would like to fund the
 development and ongoing maintenance of a version of PyStan which works on
 Windows, please post your proposal for discussion on the `Stan forum <https://discourse.mc-stan.org/>`_.
 
+.. _faq_linux_distributions:
+
+What Linux distributions are supported?
+---------------------------------------
+
+There are two officially supported Linux distributions:
+
+- Debian 11
+- Ubuntu 20.04
+
+Users have reported that PyStan works on the following Linux distributions:
+
+- Arch Linux 2021.05.01
+- Fedora 34
+
 How do I get parameter summary statistics?
 ------------------------------------------
 
