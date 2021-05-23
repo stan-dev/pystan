@@ -16,8 +16,6 @@ jobs:
           - {runs-on: macos-10.15, python-version: 3.7}
           - {runs-on: macos-10.15, python-version: 3.8}
           - {runs-on: macos-10.15, python-version: 3.9}
-          - {runs-on: ubuntu-20.04, container: "ubuntu:latest", python-version: 3.8}
-          - {runs-on: ubuntu-20.04, container: "fedora:latest", python-version: 3.8}
 
     steps:
       - name: Check out repository
