@@ -15,6 +15,14 @@ addressed by searching through the past issues.
 A clear and concise description of what the bug is.
 -->
 
+#### Describe your system
+<!-- Please include the following:
+- Operating system
+- CPU type (x86-64, AArch64, RISC-V, ...)
+- C++ compiler version
+- Python distribution, if not the default for the operating system
+-->
+
 #### Steps/Code to Reproduce
 <!--
 Please add a minimal example that we can reproduce the error by running the
