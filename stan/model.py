@@ -33,6 +33,12 @@ class frozendict(dict):
         raise TypeError("'frozendict' object is immutable.")
 
 
+def _get_error_msg(resp) -> str:
+    """Get error msg from a common.HTTPResponse"""
+    resp = resp.json()
+    return resp["message"] if "message" in resp else resp
+
+
 @dataclasses.dataclass(frozen=True)
 class Model:
     """Stores data associated with and proxies calls to a Stan model.
@@ -185,7 +191,7 @@ class Model:
                     if resp.status == 422:
                         raise ValueError(str(resp.json()))
                     elif resp.status != 201:
-                        raise RuntimeError(resp.json()["message"])
+                        raise RuntimeError(_get_error_msg(resp))
                     assert resp.status == 201
                     operations.append(resp.json())
 
@@ -223,7 +229,9 @@ class Model:
                     fit_name = operation["result"].get("name")
                     if fit_name is None:  # operation["result"] is an error
                         assert not str(operation["result"]["code"]).startswith("2"), operation
-                        message = operation["result"]["message"]
+                        message = operation
+                        if "result" in operation and "message" in operation["result"]:
+                            message = operation["result"]["message"]
                         if """ValueError('Initialization failed.')""" in message:
                             sampling_output.clear()
                             sampling_output.write_line("<info>Sampling:</info> <error>Initialization failed.</error>")
@@ -232,14 +240,14 @@ class Model:
 
                     resp = await client.get(f"/{fit_name}")
                     if resp.status != 200:
-                        raise RuntimeError((resp.json())["message"])
+                        raise RuntimeError(_get_error_msg(resp))
                     stan_outputs.append(resp.content)
 
                     # clean up after ourselves when fit is uncacheable (no random seed)
                     if self.random_seed is None:
                         resp = await client.delete(f"/{fit_name}")
                         if resp.status not in {200, 202, 204}:
-                            raise RuntimeError((resp.json())["message"])
+                            raise RuntimeError(_get_error_msg(resp))
 
                 sampling_output.clear() if io.supports_ansi() else sampling_output.write("\n")
                 sampling_output.write_line(
@@ -478,7 +486,7 @@ def build(program_code: str, data: Data = frozendict(), random_seed: Optional[in
             if resp.status != 201:
                 match = re.search(r"""ValueError\(['"](.*)['"]\)""", resp.json()["message"])
                 if not match:  # unknown error, should not happen
-                    raise RuntimeError(resp.json()["message"])
+                    raise RuntimeError(_get_error_msg(resp))
                 exception_body = match.group(1).encode().decode("unicode_escape")
                 error_type_match = re.match(r"(Semantic|Syntax) error", exception_body)
                 if error_type_match:
@@ -501,7 +509,7 @@ def build(program_code: str, data: Data = frozendict(), random_seed: Optional[in
 
             resp = await client.post(f"/{model_name}/params", json={"data": data})
             if resp.status != 200:
-                raise RuntimeError(resp.json()["message"])
+                raise RuntimeError(_get_error_msg(resp))
             params_list = resp.json()["params"]
             assert len({param["name"] for param in params_list}) == len(params_list)
             param_names, dims = zip(*((param["name"], param["dims"]) for param in params_list))
