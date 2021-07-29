@@ -11,7 +11,7 @@ Every Stan model starts with Stan program code. Begin by assigning the program c
 
 .. code-block:: python
 
-    import stan
+    import pystan as stan
 
     schools_code = """
     data {
