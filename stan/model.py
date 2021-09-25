@@ -17,11 +17,13 @@ import stan.common
 import stan.fit
 import stan.plugins
 
-Data = Dict[str, Union[int, float, Sequence[Union[int, float]], np.ndarray]]
+Data = Dict[str, Union[int, float, Sequence[Union[int, float]]]]
 
 
 class DataJSONEncoder(json.JSONEncoder):
     def default(self, obj):
+        # numpy.ndarray is *unofficially* supported as there is no easy way to
+        # construct tabular data using the Python standard library.
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         return json.JSONEncoder.default(self, obj)
