@@ -24,6 +24,9 @@ class DataJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
+        # unofficially support np.int64, np.int32, etc.
+        if hasattr(obj, "dtype") and np.issubdtype(obj.dtype, np.integer):
+            return int(obj)
         return json.JSONEncoder.default(self, obj)
 
 
