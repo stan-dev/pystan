@@ -28,6 +28,7 @@ httpstan = "~4.6"
 pysimdjson = "^3.2"
 numpy = "^1.7"
 clikit = "^0.6"
+setuptools = "*"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.4"
