@@ -3,8 +3,11 @@ set -euo pipefail
 
 KEYID=85107A96512971B8C55932085D5D0CFF0A51A83D
 
+BRANCH=$(git branch --show-current)
+[[ $BRANCH = "main" ]] || echo "Not on 'main' branch. Stopping." && exit 1
+
 # check that "Bump version" appears in most recent commit
-git log -1 | grep -q -s version
+git log -1 | grep -q -s version || echo "Did not find 'version' mentioned in commit message. Has the version been updated?" && exit 1
 
 VERSION=$(grep '^version' pyproject.toml | sed 's/version = "\([^"]\+\)"/\1/')
 read -r -p "About to create tag for $VERSION. Abort with control-c."
