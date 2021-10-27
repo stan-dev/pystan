@@ -103,5 +103,6 @@ def test_fit_empty_array_shape(zero_dims):
     data = get_data(zero_dims)
     fit = get_fit(data)
     for parameter, dim in dims.items():
-        shape = tuple(map(data.get, dim)) + (num_samples * num_chains,)
-        assert fit[parameter].shape == shape
+        base_shape = tuple(map(data.get, dim))
+        assert fit[parameter].shape == base_shape + (num_samples * num_chains,)
+        assert fit.get_samples(parameter, flatten_chains=False).shape == base_shape + (num_samples, num_chains)

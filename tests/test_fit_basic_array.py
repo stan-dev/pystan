@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 
 import stan
+import stan.fit
 
 program_code = """
     data {
@@ -34,7 +35,7 @@ def fit(posterior):
     return posterior.sample(num_samples=num_samples, num_chains=num_chains)
 
 
-def test_fit_array_draw_contents(fit):
+def test_fit_array_draw_contents(fit: stan.fit.Fit):
     """
     Make sure shapes are getting unraveled correctly. Mixing up row-major and
     column-major data is a potential issue.
@@ -45,3 +46,5 @@ def test_fit_array_draw_contents(fit):
     assert beta_mean.shape == (K, 1, 2)
     assert np.all(beta_mean[:, 0, 0] < 4)
     assert np.all(beta_mean[:, 0, 1] > 99)
+
+    assert fit.get_samples("beta", flatten_chains=False).shape == (K, 1, 2, num_samples, num_chains)

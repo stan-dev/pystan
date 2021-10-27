@@ -59,5 +59,5 @@ def test_matrix_params_sample():
     posterior = stan.build(program_code, data=data)
     fit = posterior.sample()
     df = fit.to_frame()
-    assert len(df.columns) == len(fit.sample_and_sampler_param_names) + data["K"] * data["D"]
+    assert len(df.columns) == len(fit.sample_and_sampler_param_names) + 1 + data["K"] * data["D"]
     assert len(df["beta.1.1"]) > 100

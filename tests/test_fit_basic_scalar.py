@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 
 import stan
+import stan.fit
 
 program_code = "parameters {real y;} model {y ~ normal(10, 0.0001);}"
 num_samples = 1000
@@ -29,10 +30,12 @@ def test_fit_scalar_draw_order(fit):
     assert fit._parameter_indexes("y") == (offset + 0,)
 
 
-def test_fit_scalar_param(fit):
+def test_fit_scalar_param(fit: stan.fit.Fit):
     y = fit["y"]
     assert y.shape == (1, num_samples * num_chains)
     assert 9 < np.mean(y) < 11
+
+    fit.get_samples("y", flatten_chains=False).shape == (1, num_samples, num_chains)
 
 
 def test_fit_mapping(fit):
@@ -44,3 +47,10 @@ def test_fit_mapping(fit):
     key, value = list(fit.items()).pop()
     assert key == "y"
     assert value.mean() == fit["y"].mean()
+
+
+def test_fit_scalar_frame_chain(fit: stan.fit.Fit):
+    y = fit.get_samples("y", False)
+    df = fit.to_frame()
+    for chain, subset in df.groupby("chain__"):
+        np.testing.assert_array_equal(subset.y.values, y[0, ..., chain])

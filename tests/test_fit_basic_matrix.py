@@ -2,6 +2,7 @@
 import pytest
 
 import stan
+import stan.fit
 
 # individual draw should look like:
 # [ 0 5 0 0 ]
@@ -49,7 +50,7 @@ def test_fit_matrix_draw_order(fit):
     assert fit._parameter_indexes("beta") == tuple(offset + i for i in range(K * D))
 
 
-def test_fit_matrix_draw_contents(fit):
+def test_fit_matrix_draw_contents(fit: stan.fit.Fit):
     assert fit is not None
     offset = len(fit.sample_and_sampler_param_names)
     assert fit._draws.shape == (offset + K * D, num_samples, num_chains)
@@ -69,3 +70,5 @@ def test_fit_matrix_draw_contents(fit):
     assert -1 < chain[offset + 11, :].mean() < 1
     beta = fit["beta"]
     assert beta.shape == (K, D, num_samples * num_chains)
+
+    fit.get_samples("beta", flatten_chains=False).shape == (K, D, num_samples, num_chains)

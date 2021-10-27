@@ -51,7 +51,7 @@ class Fit(collections.abc.Mapping):
 
         num_flat_params = sum(np.product(dims_ or 1) for dims_ in dims)  # if dims == [] then it is a scalar
         assert num_flat_params == len(constrained_param_names)
-        num_samples_saved = (self.num_samples + self.num_warmup * self.save_warmup) // self.num_thin
+        self.num_samples_saved = (self.num_samples + self.num_warmup * self.save_warmup) // self.num_thin
 
         # self._draws holds all the draws. We cannot allocate it before looking at the draws
         # because we do not know how many sampler-specific parameters are present. Later in this
@@ -82,7 +82,7 @@ class Fit(collections.abc.Mapping):
                         )
                         num_rows = len(self.sample_and_sampler_param_names) + num_flat_params
                         # column-major order ("F") aligns with how the draws are stored (in cols).
-                        self._draws = np.empty((num_rows, num_samples_saved, num_chains), order="F")
+                        self._draws = np.empty((num_rows, self.num_samples_saved, num_chains), order="F")
                         # rudimentary check of parameter order (sample & sampler params must be first)
                         if num_flat_params and feature_names[-1].endswith("__"):
                             raise RuntimeError(
@@ -92,7 +92,7 @@ class Fit(collections.abc.Mapping):
                     draw_row = tuple(msg["values"].values())  # a "row" of values from a single draw from Stan C++
                     self._draws[:, draw_index, chain_index] = draw_row
                     draw_index += 1
-            assert draw_index == num_samples_saved
+            assert draw_index == self.num_samples_saved
         assert self.sample_and_sampler_param_names and self._draws.size
         self._draws.flags["WRITEABLE"] = False
 
@@ -116,27 +116,47 @@ class Fit(collections.abc.Mapping):
         assert len(self._draws) == len(columns)
         df = pd.DataFrame(self._draws.reshape(len(columns), -1).T, columns=columns)
         df.index.name, df.columns.name = "draws", "parameters"
+
+        # Create a variable telling us which chain the sample came from.
+        chain = np.ones((self.num_samples_saved, 1), int) * np.arange(self.num_chains)
+        df.insert(len(self.sample_and_sampler_param_names), "chain__", chain.ravel())
         return df
 
-    def __getitem__(self, param):
-        """Returns array with shape (stan_dimensions, num_chains * num_samples)"""
+    def get_samples(self, param: str, flatten_chains: bool = True):
+        """
+        Get samples for a given parameter.
+
+        Args:
+            param: Name of the parameter to get samples for.
+            flatten_chains: Whether to combine all chains by flattening them.
+
+        Returns:
+            samples: Array of samples with shape `(stan_dimensions, num_chains * num_samples)` if
+                `flatten_chains` is truthy and `(stan_dimensions, num_chains, num_samples)` if not.
+        """
         assert param.endswith("__") or param in self.param_names, param
         param_indexes = self._parameter_indexes(param)
-        param_dim = [] if param in self.sample_and_sampler_param_names else self.dims[self.param_names.index(param)]
+        param_dim = (
+            [] if param in self.sample_and_sampler_param_names else list(self.dims[self.param_names.index(param)])
+        )
         # fmt: off
-        num_samples_saved = (self.num_samples + self.num_warmup * self.save_warmup) // self.num_thin
-        assert self._draws.shape == (len(self.sample_and_sampler_param_names) + len(self.constrained_param_names), num_samples_saved, self.num_chains)
+        assert self._draws.shape == (len(self.sample_and_sampler_param_names) + len(self.constrained_param_names), self.num_samples_saved, self.num_chains)
+        trailing_shape = [self.num_samples_saved * self.num_chains] if flatten_chains else [self.num_samples_saved, self.num_chains]
         # fmt: on
         if not len(param_indexes):
             assert 0 in param_dim
-            return np.array([]).reshape(param_dim + [num_samples_saved * self.num_chains])
+            return np.empty(param_dim + trailing_shape)
         # Stack chains together. Parameter is still stored flat.
-        view = self._draws[param_indexes, :, :].reshape(len(param_indexes), -1).view()
-        assert view.shape == (len(param_indexes), num_samples_saved * self.num_chains)
-        # reshape must yield something with least two dimensions
-        reshape_args = param_dim + [-1] if param_dim else (1, -1)
+        shape = [len(param_indexes)] + trailing_shape
+        view = self._draws[param_indexes, :, :].reshape(shape).view()
+        # reshape must yield something with at least two dimensions
+        shape = (param_dim if param_dim else [1]) + trailing_shape
         # reshape, recover the shape of the stan parameter
-        return view.reshape(*reshape_args, order="F")
+        return view.reshape(shape, order="F")
+
+    def __getitem__(self, param):
+        """Returns array with shape (stan_dimensions, num_chains * num_samples)"""
+        return self.get_samples(param, flatten_chains=True)
 
     def __iter__(self) -> Generator[str, None, None]:
         for name in self.param_names:

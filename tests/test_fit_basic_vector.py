@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 
 import stan
+import stan.fit
 
 # draws should look like (0, 5, 0)
 program_code = """
@@ -39,7 +40,7 @@ def test_fit_vector_draw_order(fit):
     assert fit._parameter_indexes("beta") == tuple(offset + i for i in range(3))
 
 
-def test_fit_vector_draw_contents(fit):
+def test_fit_vector_draw_contents(fit: stan.fit.Fit):
     assert fit is not None
     offset = len(fit.sample_and_sampler_param_names)
     assert fit._draws.shape == (offset + 3, num_samples, num_chains)
@@ -53,3 +54,5 @@ def test_fit_vector_draw_contents(fit):
     assert -1 < beta_mean[0] < 1
     assert 4 < beta_mean[1] < 6
     assert -1 < beta_mean[2] < 1
+
+    fit.get_samples("beta", flatten_chains=False).shape == (3, num_samples, num_chains)
