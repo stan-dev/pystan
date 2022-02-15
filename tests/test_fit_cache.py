@@ -28,7 +28,7 @@ def test_fit_cache():
 
     cache_size_before = file_usage(cache_path())
     # this fit is cacheable
-    random_seed = random.randrange(1, 2 ** 16)
+    random_seed = random.randrange(1, 2**16)
     normal_posterior = stan.build(program_code, random_seed=random_seed)
     normal_posterior.sample()
     cache_size_after = file_usage(cache_path())

@@ -21,7 +21,7 @@ num_chains = 4
 
 def gaussian_gradient(x: float, mean: float, var: float) -> float:
     """Analytically evaluate Gaussian gradient."""
-    gradient = (mean - x) / (var ** 2)
+    gradient = (mean - x) / (var**2)
     return gradient
 
 
