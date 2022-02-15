@@ -24,7 +24,7 @@ Notable features of PyStan include:
 Quick start
 ===========
 
-Install PyStan with ``python3 -m pip install pystan``. PyStan requires Python ≥3.7 running on Linux or macOS. You will also need a C++ compiler such as gcc ≥9.0 or clang ≥10.0.
+Install PyStan with ``python3 -m pip install pystan``. PyStan runs on Linux and macOS. You will also need a C++ compiler such as gcc ≥9.0 or clang ≥10.0.
 
 This block of code shows how to use PyStan with a hierarchical model used to study coaching effects across eight schools (see Section 5.5 of Gelman et al. (2003)).
 

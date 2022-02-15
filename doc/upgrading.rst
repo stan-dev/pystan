@@ -7,7 +7,7 @@ Upgrading to Newer Releases
 Upgrading to 3.0
 ================
 
-PyStan 3 is a complete rewrite. PyStan requires Python ≥3.7 running on Linux or macOS.
+PyStan 3 is a complete rewrite. PyStan runs on Linux and macOS.
 
 PyStan 3 makes numerous **backwards-incompatible changes**.
 Many of these changes are introduced to harmonize variable naming practices across the numerous interfaces to the Stan C++ library.
