@@ -94,7 +94,7 @@ class Fit(collections.abc.Mapping):
                     draw_index += 1
             assert draw_index == num_samples_saved
         assert self.sample_and_sampler_param_names and self._draws.size
-        self._draws.flags["WRITEABLE"] = False
+        self._draws.flags["WRITEABLE"] = False  # type: ignore
 
     def __contains__(self, key):
         return key in self.param_names
