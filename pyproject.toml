@@ -22,11 +22,11 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 aiohttp = "^3.6"
 httpstan = "~4.6"
 pysimdjson = "^3.2"
-numpy = "^1.7"
+numpy = "^1.19"
 clikit = "^0.6"
 setuptools = "*"
 
