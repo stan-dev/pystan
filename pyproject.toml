@@ -39,6 +39,7 @@ autoflake = "^1.4"
 black = "22.1.0"
 isort = "^5.9"
 mypy = "0.910"
+types-setuptools = "^57.4"
 flake8 = "^3.9"
 # documentation
 sphinx = "^3.5"
