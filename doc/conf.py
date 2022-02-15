@@ -13,8 +13,8 @@ extensions = [
 
 source_suffix = ".rst"
 master_doc = "index"
-project = u"pystan"
-copyright = u"2019, pystan Developers"
+project = "pystan"
+copyright = "2019, pystan Developers"
 
 
 intersphinx_mapping = {
