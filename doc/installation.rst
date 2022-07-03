@@ -18,7 +18,7 @@ Supported Linux distributions
 There are two officially supported Linux distributions:
 
 - Debian 11
-- Ubuntu 20.04
+- Ubuntu 22.04
 
 Users have reported that PyStan works on :ref:`several other Linux distributions <faq_linux_distributions>`.
 If you use an unsupported distribution and find that the PyPI wheels do not work, try `installing

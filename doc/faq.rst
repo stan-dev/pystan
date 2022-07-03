@@ -32,12 +32,16 @@ What Linux distributions are supported?
 There are two officially supported Linux distributions:
 
 - Debian 11
-- Ubuntu 20.04
+- Ubuntu 22.04
 
 Users have reported that PyStan works on the following Linux distributions:
 
 - Arch Linux 2021.05.01
 - Fedora 34
+- Ubuntu 20.04
+
+If ``pip install pystan`` fails, please try to `install httpstan from source <https://httpstan.readthedocs.io/en/latest/installation.html>`_ first.
+If you successfully install ``httpstan``, ``pip install pystan`` should work.
 
 How do I get parameter summary statistics?
 ------------------------------------------
