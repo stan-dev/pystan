@@ -21,7 +21,8 @@ class HTTPResponse(typing.NamedTuple):
     content: bytes
 
     def json(self) -> dict:
-        return simdjson.loads(self.content)
+        # mypy 0.961 complains that simdjson lacks a `loads`.
+        return simdjson.loads(self.content)  # type: ignore
 
 
 class HttpstanClient:

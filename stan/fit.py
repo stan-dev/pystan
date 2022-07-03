@@ -65,7 +65,7 @@ class Fit(collections.abc.Mapping):
             draw_index = 0
             for line in stan_output.splitlines():
                 try:
-                    msg = parser.parse(line)
+                    msg = cast(simdjson.Object, parser.parse(line))
                 except ValueError:
                     # Occurs when draws contain an nan or infinity. simdjson cannot parse such values.
                     msg = json.loads(line)

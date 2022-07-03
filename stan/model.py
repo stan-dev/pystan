@@ -3,7 +3,7 @@ import dataclasses
 import json
 import re
 import time
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import httpstan.models
 import httpstan.schemas
@@ -258,11 +258,12 @@ class Model:
             stan_outputs = tuple(stan_outputs)  # Fit constructor expects a tuple.
 
             def is_nonempty_logger_message(msg: simdjson.Object):
-                return msg["topic"] == "logger" and msg["values"][0] != "info:"
+                return msg["topic"] == "logger" and msg["values"][0] != "info:"  # type: ignore
 
             def is_iteration_or_elapsed_time_logger_message(msg: simdjson.Object):
                 # Assumes `msg` is a message with topic `logger`.
-                text = msg["values"][0]
+                text = msg["values"][0]  # type: ignore
+                text = cast(str, text)
                 return (
                     text.startswith("info:Iteration:")
                     or text.startswith("info: Elapsed Time:")
