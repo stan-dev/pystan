@@ -29,10 +29,11 @@ Windows, please post your proposal for discussion on the `Stan forum <https://di
 What Linux distributions are supported?
 ---------------------------------------
 
-There are two officially supported Linux distributions:
+There are three officially supported Linux distributions:
 
 - Debian 11
 - Ubuntu 20.04
+- Ubuntu 22.04
 
 Users have reported that PyStan works on the following Linux distributions:
 
