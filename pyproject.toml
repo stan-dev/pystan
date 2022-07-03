@@ -37,11 +37,11 @@ pandas = "^1.0"
 autoflake = "^1.4"
 black = "22.6.0"
 isort = "^5.9"
-mypy = "0.910"
+mypy = "0.961"
 types-setuptools = "^57.4"
-flake8 = "^3.9"
+flake8 = "^4.0"
 # documentation
-sphinx = "^4.2"
+sphinx = "^5.0"
 sphinx-rtd-theme = "^1.0"
 
 [tool.black]
