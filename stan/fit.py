@@ -1,6 +1,6 @@
 import collections
 import json
-from typing import Generator, Tuple, cast
+from typing import Dict, Generator, Tuple, cast
 
 import numpy as np
 import simdjson
@@ -65,10 +65,10 @@ class Fit(collections.abc.Mapping):
             draw_index = 0
             for line in stan_output.splitlines():
                 try:
-                    msg = parser.parse(line)
+                    msg = cast(simdjson.Object, parser.parse(line))
                 except ValueError:
                     # Occurs when draws contain an nan or infinity. simdjson cannot parse such values.
-                    msg = json.loads(line)
+                    msg = cast(Dict, json.loads(line))
                 if msg["topic"] == "sample":
                     # Ignore sample message which is mixed together with proper draws.
                     if not isinstance(msg["values"], (simdjson.Object, dict)):
