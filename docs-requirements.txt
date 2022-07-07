@@ -1,0 +1,5 @@
+# docs requirements
+# these requirements are used by the documentation builder
+
+sphinx~=4.2 # BSD
+sphinx-rtd-theme~=1.0.0
