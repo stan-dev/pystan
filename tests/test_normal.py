@@ -1,3 +1,5 @@
+from math import ceil
+
 import stan
 
 
@@ -41,7 +43,7 @@ def test_normal_sample_args():
     program_code = "parameters {real y;} model {y ~ normal(0,1);}"
     posterior = stan.build(program_code, random_seed=1)
     assert posterior is not None
-    fit = posterior.sample(num_samples=350, num_thin=2)
+    fit = posterior.sample(num_samples=350, num_warmup=350, num_thin=3, save_warmup=True)
     df = fit.to_frame()
-    assert len(df["y"]) == 350 * 4 // 2
+    assert len(df["y"]) == ceil(350 / 3) * 2 * 4
     assert -5 < df["y"].mean() < 5
