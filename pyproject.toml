@@ -37,7 +37,7 @@ pandas = "^1.0"
 autoflake = "^1.4"
 black = "22.6.0"
 isort = "^5.9"
-mypy = "0.961"
+mypy = "0.982"
 types-setuptools = "^57.4"
 flake8 = "^4.0"
 # documentation
