@@ -1,5 +1,6 @@
 import collections
 import json
+from math import ceil
 from typing import Generator, Tuple, cast
 
 import numpy as np
@@ -41,6 +42,8 @@ class Fit(collections.abc.Mapping):
             constrained_param_names,
         )
         self.num_warmup, self.num_samples = num_warmup, num_samples
+        if not isinstance(num_thin, int):
+            raise ValueError(f"{type(num_thin)} object cannot be interpreted as an integer: num_thin={num_thin}")
         self.num_thin, self.save_warmup = num_thin, save_warmup
 
         # `self.sample_and_sampler_param_names` collects the sample and sampler param names.
@@ -51,7 +54,9 @@ class Fit(collections.abc.Mapping):
 
         num_flat_params = sum(np.product(dims_ or 1) for dims_ in dims)  # if dims == [] then it is a scalar
         assert num_flat_params == len(constrained_param_names)
-        num_samples_saved = (self.num_samples + self.num_warmup * self.save_warmup) // self.num_thin
+        num_samples_saved = ceil(self.num_samples / self.num_thin) + ceil(
+            (self.num_warmup * self.save_warmup) / self.num_thin
+        )
 
         # self._draws holds all the draws. We cannot allocate it before looking at the draws
         # because we do not know how many sampler-specific parameters are present. Later in this
@@ -124,7 +129,7 @@ class Fit(collections.abc.Mapping):
         param_indexes = self._parameter_indexes(param)
         param_dim = [] if param in self.sample_and_sampler_param_names else self.dims[self.param_names.index(param)]
         # fmt: off
-        num_samples_saved = (self.num_samples + self.num_warmup * self.save_warmup) // self.num_thin
+        num_samples_saved = ceil(self.num_samples / self.num_thin) + ceil((self.num_warmup * self.save_warmup) / self.num_thin)
         assert self._draws.shape == (len(self.sample_and_sampler_param_names) + len(self.constrained_param_names), num_samples_saved, self.num_chains)
         # fmt: on
         if not len(param_indexes):
