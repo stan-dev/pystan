@@ -42,8 +42,8 @@ def test_bernoulli_fixed_param(posterior):
 
 
 def test_bernoulli_sampling_invalid_argument(posterior):
-    with pytest.raises(TypeError, match=r"'float' object cannot be interpreted as an integer"):
-        posterior.sample(num_thin=2.0)
+    with pytest.raises(ValueError, match="<class 'float'> object cannot be interpreted as an integer"):
+        posterior.sample(num_thin=2.5)
 
 
 def test_bernoulli_sampling(fit):
