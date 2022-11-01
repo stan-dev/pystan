@@ -4,7 +4,7 @@ on:
     tags:
       - "*.*.*"
 jobs:
-  publish:
+  make-sdist:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -17,7 +17,78 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install poetry==1.1.13
       - name: Build and publish
-        env:
-          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
         run: |
-          python -m poetry publish --build -u __token__ -p $PYPI_TOKEN
+          python -m poetry build --format=sdist
+      - name: Upload sdist as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifact-source-dist
+          path: "./**/dist/*.tar.gz"
+
+  make-wheels:
+    name: Make ${{ matrix.os }} ${{ matrix.cibw_arch }} ${{ matrix.py_version }} wheels
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ["macos-latest", "ubuntu-latest", "windows-latest"]
+        cibw_arch: ["native", "aarch64"]
+        py_version: ["cp37-*", "cp38-*", "cp39-*", "cp310-*"]
+        exclude:
+          - os: macos-latest
+            cibw_arch: "aarch64"
+          - os: windows-latest
+            cibw_arch: "aarch64"
+      fail-fast: false
+
+    steps:
+      - name: "Checkout repo"
+        uses: actions/checkout@v3
+
+      - name: "Restore RTools40"
+        if: startsWith(runner.os, 'Windows')
+        id: cache-rtools
+        uses: actions/cache@v2
+        with:
+          path: C:/rtools40
+          key: ${{ runner.os }}-${{ env.OS_VERSION }}-rtools-v1
+
+      - name: Set up QEMU
+        if: matrix.cibw_arch == 'aarch64'
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64
+
+      - name: "Build wheels"
+        uses: pypa/cibuildwheel@v2.6.0
+        with:
+          package-dir: python
+        env:
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+          CIBW_BUILD: ${{ matrix.py_version }}
+          CIBW_SKIP: "*musllinux*"
+          CIBW_ARCHS: ${{ matrix.cibw_arch }}
+          CIBW_BUILD_FRONTEND: build
+
+      - name: "Upload wheel as artifact"
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifact-${{ matrix.os }}-${{ matrix.cibw_arch }}-wheel
+          path: "./**/*.whl"
+
+  upload:
+    name: Upload to PyPi
+    needs: [make-sdist, make-wheels]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+      - name: Copy artifacts to dist/ folder
+        run: |
+          find . -name 'artifact-*' -exec unzip '{}' \;
+          mkdir -p dist/
+          find . -name '*.tar.gz' -exec mv '{}' dist/ \;
+          find . -name '*.whl' -exec mv '{}' dist/ \;
+      - name: Upload
+        uses: pypa/gh-action-pypi-publish@v1.4.2
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
