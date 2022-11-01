@@ -30,27 +30,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ["macos-latest", "ubuntu-latest", "windows-latest"]
+        os: ["macos-latest", "ubuntu-latest"]
         cibw_arch: ["native", "aarch64"]
         py_version: ["cp37-*", "cp38-*", "cp39-*", "cp310-*"]
         exclude:
           - os: macos-latest
-            cibw_arch: "aarch64"
-          - os: windows-latest
             cibw_arch: "aarch64"
       fail-fast: false
 
     steps:
       - name: "Checkout repo"
         uses: actions/checkout@v3
-
-      - name: "Restore RTools40"
-        if: startsWith(runner.os, 'Windows')
-        id: cache-rtools
-        uses: actions/cache@v2
-        with:
-          path: C:/rtools40
-          key: ${{ runner.os }}-${{ env.OS_VERSION }}-rtools-v1
 
       - name: Set up QEMU
         if: matrix.cibw_arch == 'aarch64'
