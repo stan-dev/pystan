@@ -282,6 +282,7 @@ class Model:
                     msg = parser.parse(line)
                     if is_nonempty_logger_message(msg) and not is_iteration_or_elapsed_time_logger_message(msg):
                         nonstandard_logger_messages.append(msg.as_dict())
+                    del msg
             del parser  # simdjson.Parser is no longer used at this point.
 
             if nonstandard_logger_messages:
