@@ -74,29 +74,33 @@ class Fit(collections.abc.Mapping):
                 except ValueError:
                     # Occurs when draws contain an nan or infinity. simdjson cannot parse such values.
                     msg = json.loads(line)
-                if msg["topic"] == "sample":
-                    # Ignore sample message which is mixed together with proper draws.
-                    if not isinstance(msg["values"], (simdjson.Object, dict)):
-                        continue
+                try:
+                    if msg["topic"] == "sample":
+                        # Ignore sample message which is mixed together with proper draws.
+                        if not isinstance(msg["values"], (simdjson.Object, dict)):
+                            continue
 
-                    # for the first draw: collect sample and sampler parameter names.
-                    if not hasattr(self, "_draws"):
-                        feature_names = cast(Tuple[str, ...], tuple(msg["values"].keys()))
-                        self.sample_and_sampler_param_names = tuple(
-                            name for name in feature_names if name.endswith("__")
-                        )
-                        num_rows = len(self.sample_and_sampler_param_names) + num_flat_params
-                        # column-major order ("F") aligns with how the draws are stored (in cols).
-                        self._draws = np.empty((num_rows, num_samples_saved, num_chains), order="F")
-                        # rudimentary check of parameter order (sample & sampler params must be first)
-                        if num_flat_params and feature_names[-1].endswith("__"):
-                            raise RuntimeError(
-                                f"Expected last parameter name to be one declared in program code, found `{feature_names[-1]}`"
+                        # for the first draw: collect sample and sampler parameter names.
+                        if not hasattr(self, "_draws"):
+                            feature_names = cast(Tuple[str, ...], tuple(msg["values"].keys()))
+                            self.sample_and_sampler_param_names = tuple(
+                                name for name in feature_names if name.endswith("__")
                             )
+                            num_rows = len(self.sample_and_sampler_param_names) + num_flat_params
+                            # column-major order ("F") aligns with how the draws are stored (in cols).
+                            self._draws = np.empty((num_rows, num_samples_saved, num_chains), order="F")
+                            # rudimentary check of parameter order (sample & sampler params must be first)
+                            if num_flat_params and feature_names[-1].endswith("__"):
+                                raise RuntimeError(
+                                    f"Expected last parameter name to be one declared in program code, found `{feature_names[-1]}`"
+                                )
 
-                    draw_row = tuple(msg["values"].values())  # a "row" of values from a single draw from Stan C++
-                    self._draws[:, draw_index, chain_index] = draw_row
-                    draw_index += 1
+                        draw_row = tuple(msg["values"].values())  # a "row" of values from a single draw from Stan C++
+                        self._draws[:, draw_index, chain_index] = draw_row
+                        draw_index += 1
+                finally:
+                    # clean up `Object`s produced by parser, required by simdjson
+                    del msg
             assert draw_index == num_samples_saved
         assert self.sample_and_sampler_param_names and self._draws.size
         self._draws.flags["WRITEABLE"] = False  # type: ignore
