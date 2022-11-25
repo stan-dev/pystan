@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pystan"
-version = "3.5.0"
+version = "3.6.0"
 description = "Python interface to Stan, a package for Bayesian inference"
 authors = [
   "Allen Riddell <riddella@indiana.edu>",
@@ -24,7 +24,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.8"
 aiohttp = "^3.6"
-httpstan = "~4.8"
+httpstan = "~4.9"
 pysimdjson = "^5.0.2"
 numpy = "^1.19"
 clikit = "^0.6"
