@@ -82,3 +82,31 @@ It should print useful statistics about the parameters::
 
 Using this technique should give you much of the information provided
 by the CmdStan program ``stansummary``.
+
+How can I run pystan on macOS with Apple silicon chips (Apple M1, M2, etc)?
+---------------------------------------------------------------------------
+
+First, you have to install the httpstan package from source. This can be done
+with the following steps:
+
+1. Download source code from newest httpspan version from
+   `httpstan's GitHub <https://github.com/stan-dev/httpstan/tags>`_.
+2. Extract .zip or .tar.gz.
+3. With an active virtual environment, navigate to the extracted folder in the
+   terminal and follow instructions below taken from
+   `httpstan's documentation <https://httpstan.readthedocs.io/en/latest/installation.html>`_:
+
+   a. Build shared libraries by typing ``make`` into the terminal.
+   b. Build the httpstan wheel on your system by typing ``python3 -m pip 
+      install poetry`` followed by ``python3 -m poetry build`` into the
+      terminal.
+   c. Install the wheel by typing ``python3 -m pip install dist/*.whl`` into
+      the terminal.
+
+Second, you can install pystan from `PyPI <https://pypi.org/project/pystan/>`_
+from source by typing ``pip install pystan --no-binary pystan`` into the
+terminal.
+
+You are now ready to use pystan and you can test it by running the "Quick
+start" code provided
+`here <https://pystan.readthedocs.io/en/latest/index.html>`_.
