@@ -35,8 +35,8 @@ This block of code shows how to use PyStan with a hierarchical model used to stu
     schools_code = """
     data {
       int<lower=0> J;         // number of schools
-      real y[J];              // estimated treatment effects
-      real<lower=0> sigma[J]; // standard error of effect estimates
+      array[J] real y;              // estimated treatment effects
+      array[J] real<lower=0> sigma; // standard error of effect estimates
     }
     parameters {
       real mu;                // population treatment effect
