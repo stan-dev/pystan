@@ -9,7 +9,7 @@ program_code = """
       int<lower=2> K;
     }
     parameters {
-      real beta[K,1,2];
+      array[K,1,2] real beta;
     }
     model {
       for (k in 1:K)

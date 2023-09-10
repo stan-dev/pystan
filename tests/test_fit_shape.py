@@ -16,8 +16,8 @@ program_code = """
       int S;
     }
     parameters {
-      real a[K];
-      real B[L, M];
+      array[K] real a;
+      array[L, M] real B;
       vector[N] c;
       matrix[O, P] D;
       matrix[R, S] E[Q];

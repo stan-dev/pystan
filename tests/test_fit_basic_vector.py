@@ -7,7 +7,7 @@ import stan
 # draws should look like (0, 5, 0)
 program_code = """
 parameters {
-  real beta[3];
+  array[3] real beta;
 }
 model {
   beta[1] ~ normal(0, 0.0001);
