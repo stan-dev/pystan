@@ -89,7 +89,7 @@ How can I run pystan on macOS with Apple silicon chips (Apple M1, M2, etc)?
 First, you have to install the httpstan package from source. This can be done
 with the following steps:
 
-1. Download source code from newest httpspan version from
+1. Download source code from newest httpstan version from
    `httpstan's GitHub <https://github.com/stan-dev/httpstan/tags>`_.
 2. Extract .zip or .tar.gz.
 3. With an active virtual environment, navigate to the extracted folder in the
