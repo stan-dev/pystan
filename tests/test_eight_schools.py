@@ -16,7 +16,7 @@ program_code = """
       array[J] real eta;
     }
     transformed parameters {
-      real theta[J];
+      array[J] real theta;
       for (j in 1:J)
         theta[j] = mu + tau * eta[j];
     }
