@@ -20,37 +20,36 @@ program_code = """
       array[L, M] real B;
       vector[N] c;
       matrix[O, P] D;
-      matrix[R, S] E[Q];
+      array[Q] matrix[R, S] E;
     }
     model {
-      for (k in 1:K) {
+      for (k in 1 : K) {
         a[k] ~ std_normal();
       }
 
-      for (l in 1:L) {
-        for (m in 1:M) {
+      for (l in 1 : L) {
+        for (m in 1 : M) {
           B[l, m] ~ std_normal();
         }
       }
 
-      for (n in 1:N) {
+      for (n in 1 : N) {
         c[n] ~ std_normal();
       }
 
-      for (o in 1:O) {
-        for (p in 1:P) {
+      for (o in 1 : O) {
+        for (p in 1 : P) {
           D[o, p] ~ std_normal();
         }
       }
 
-      for (q in 1:Q) {
-        for (r in 1:R) {
-          for (s in 1:S) {
+      for (q in 1 : Q) {
+        for (r in 1 : R) {
+          for (s in 1 : S) {
             E[q, r, s] ~ std_normal();
           }
         }
       }
-
     }
 """
 num_samples = 100

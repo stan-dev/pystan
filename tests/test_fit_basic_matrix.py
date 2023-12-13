@@ -21,7 +21,7 @@ program_code = """
      model {
      for (k in 1:K)
          for (d in 1:D)
-           beta[k,d] ~ normal(if_else(d==2, 5, 0), 0.000001);
+           beta[k,d] ~ normal(d==2 ? 5 : 0, 0.000001);
      }
 """
 K, D = 3, 4
