@@ -15,8 +15,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install poetry==1.1.13
-          python -m pip install -U requests_toolbelt==1.0.0  # fixes https://github.com/python-poetry/poetry/issues/8679
+          python -m pip install poetry~=1.7.1
       - name: Build and publish
         env:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
