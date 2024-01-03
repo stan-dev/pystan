@@ -98,7 +98,7 @@ with the following steps:
 
    a. Build shared libraries by typing ``make`` into the terminal.
    b. Build the httpstan wheel on your system by typing ``python3 -m pip 
-      install poetry`` followed by ``python3 -m poetry build`` into the
+      install poetry==1.1.15`` followed by ``python3 -m poetry build`` into the
       terminal.
    c. Install the wheel by typing ``python3 -m pip install dist/*.whl`` into
       the terminal.
