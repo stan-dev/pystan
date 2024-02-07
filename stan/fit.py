@@ -52,7 +52,7 @@ class Fit(collections.abc.Mapping):
         # These names are gathered later in this function by inspecting the output from Stan.
         self.sample_and_sampler_param_names: Tuple[str, ...]
 
-        num_flat_params = sum(np.product(dims_ or 1) for dims_ in dims)  # if dims == [] then it is a scalar
+        num_flat_params = sum(np.prod(dims_ or 1) for dims_ in dims)  # if dims == [] then it is a scalar
         assert num_flat_params == len(constrained_param_names)
         num_samples_saved = ceil(self.num_samples / self.num_thin) + ceil(
             (self.num_warmup * self.save_warmup) / self.num_thin
