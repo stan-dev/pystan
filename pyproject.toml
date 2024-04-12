@@ -25,7 +25,7 @@ classifiers = [
 python = "^3.9"
 aiohttp = "^3.6"
 httpstan = "~4.12"
-pysimdjson = "^5.0.2"
+pysimdjson = ">=5.0.2,<7"
 numpy = "^1.19"
 clikit = "^0.6"
 setuptools = "*"
