@@ -33,7 +33,7 @@ setuptools = "*"
 [tool.poetry.dev-dependencies]
 pytest = "^6.2"
 pytest-asyncio = "^0.18.3"
-pandas = "^1.0"
+pandas = ">=1.0,<3"
 black = "22.6.0"
 isort = "^5.9"
 mypy = "0.982"
