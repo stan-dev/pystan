@@ -44,7 +44,7 @@ line-length of 119 characters. Documentation, comments, and docstrings should be
 .. _PEP 8: https://www.python.org/dev/peps/pep-0008/
 .. _black: https://pypi.org/project/black/
 
-PyStan code is also checked by ``flake8`` and ``mypy``.
+PyStan code is also checked by ``mypy``.
 
 Commit Messages
 ===============
