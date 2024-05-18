@@ -36,7 +36,7 @@ pytest-asyncio = "^0.18.3"
 pandas = ">=1.0,<3"
 black = "22.6.0"
 isort = "^5.9"
-mypy = "0.982"
+mypy = "1.10.0"
 types-setuptools = "^57.4"
 # documentation
 # NOTE: when changing these, update docs-requirements.txt
@@ -50,6 +50,11 @@ line-length = 119
 profile = "black"
 combine_as_imports = true
 known_first_party = "stan,tests"
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+pretty = true
 
 [build-system]
 requires = ["poetry_core>=1.0.0"]
