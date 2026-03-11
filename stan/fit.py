@@ -96,6 +96,7 @@ class Fit(collections.abc.Mapping):
                                 )
 
                         draw_row = tuple(msg["values"].values())  # a "row" of values from a single draw from Stan C++
+                        draw_row = cast(Tuple[float, ...], draw_row)
                         self._draws[:, draw_index, chain_index] = draw_row
                         draw_index += 1
                 finally:
