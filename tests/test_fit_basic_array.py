@@ -1,4 +1,5 @@
 """Test model with array parameter."""
+
 import numpy as np
 import pytest
 

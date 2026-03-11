@@ -1,4 +1,5 @@
 """Tests for sampling related exceptions."""
+
 import pytest
 
 import stan

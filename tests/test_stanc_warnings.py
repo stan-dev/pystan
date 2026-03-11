@@ -1,4 +1,5 @@
 """Test that stanc warnings are visible."""
+
 import contextlib
 import io
 

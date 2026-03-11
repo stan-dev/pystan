@@ -1,4 +1,5 @@
 """Test building a Stan program."""
+
 import pytest
 
 import stan

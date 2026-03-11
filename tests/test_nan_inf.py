@@ -1,4 +1,5 @@
 """Test serialization of nan and inf values."""
+
 import math
 
 import stan

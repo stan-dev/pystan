@@ -3,6 +3,7 @@
 Introduced in response to a macOS bug that only
 triggered when a larger number of parameters were used.
 """
+
 import pytest
 
 import stan

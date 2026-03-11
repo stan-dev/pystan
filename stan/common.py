@@ -1,4 +1,5 @@
 """Common routines"""
+
 import socket
 import typing
 

@@ -1,4 +1,5 @@
 """Tests for build related exceptions."""
+
 import pytest
 
 import stan

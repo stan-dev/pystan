@@ -1,4 +1,5 @@
 """Test model with a matrix parameter."""
+
 import pytest
 
 import stan

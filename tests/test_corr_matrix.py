@@ -1,4 +1,5 @@
 """CPU-intensive test, useful for testing progress bars."""
+
 import stan
 
 program_code = """

@@ -1,4 +1,5 @@
 """Test handling of `data` dictionary."""
+
 import copy
 
 import numpy as np

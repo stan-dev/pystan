@@ -1,4 +1,5 @@
 """Test model with a vector parameter."""
+
 import numpy as np
 import pytest
 

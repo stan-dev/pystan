@@ -1,4 +1,5 @@
 """Test model parameter shapes."""
+
 import pytest
 
 import stan

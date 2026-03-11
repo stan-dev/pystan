@@ -1,4 +1,5 @@
 """Test model with a scalar parameter."""
+
 import numpy as np
 import pytest
 

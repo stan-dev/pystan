@@ -1,4 +1,5 @@
 """Test constrain parameters."""
+
 import random
 
 import numpy as np

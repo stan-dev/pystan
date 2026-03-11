@@ -1,4 +1,5 @@
 """Tests related to cached fits."""
+
 import os
 import pathlib
 import random

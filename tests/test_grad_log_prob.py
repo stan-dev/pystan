@@ -1,4 +1,5 @@
 """Test model with array parameter."""
+
 import random
 
 import numpy as np

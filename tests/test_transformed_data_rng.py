@@ -1,4 +1,5 @@
 """Verify that the RNG in the transformed data block uses the overall seed."""
+
 import numpy as np
 
 import stan
