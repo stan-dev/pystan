@@ -1,4 +1,5 @@
-import pkg_resources
+import importlib.metadata
+
 import pytest
 
 import stan
@@ -20,7 +21,7 @@ class MockEntryPoint:
         return DummyPlugin
 
 
-def mock_iter_entry_points(group):
+def mock_entry_points(group):
     return iter([MockEntryPoint])
 
 
@@ -31,7 +32,7 @@ def normal_posterior():
 
 def test_get_plugins(monkeypatch):
 
-    monkeypatch.setattr(pkg_resources, "iter_entry_points", mock_iter_entry_points)
+    monkeypatch.setattr(importlib.metadata, "entry_points", mock_entry_points)
 
     entry_points = stan.plugins.get_plugins()
     Plugin = next(entry_points).load()
@@ -40,7 +41,7 @@ def test_get_plugins(monkeypatch):
 
 def test_dummy_plugin(monkeypatch, capsys, normal_posterior):
 
-    monkeypatch.setattr(pkg_resources, "iter_entry_points", mock_iter_entry_points)
+    monkeypatch.setattr(importlib.metadata, "entry_points", mock_entry_points)
 
     fit = normal_posterior.sample(stepsize=0.001)
     assert fit is not None and "y" in fit
@@ -65,10 +66,10 @@ class OtherMockEntryPoint:
 def test_two_plugins(monkeypatch, capsys, normal_posterior):
     """Make sure that both plugins are used."""
 
-    def mock_iter_entry_points(group):
+    def mock_entry_points(group):
         return iter([MockEntryPoint, OtherMockEntryPoint])
 
-    monkeypatch.setattr(pkg_resources, "iter_entry_points", mock_iter_entry_points)
+    monkeypatch.setattr(importlib.metadata, "entry_points", mock_entry_points)
 
     fit = normal_posterior.sample(stepsize=0.001)
     assert fit is not None and "y" in fit

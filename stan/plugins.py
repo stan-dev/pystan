@@ -1,14 +1,12 @@
 import abc
-from typing import Generator
-
-import pkg_resources
+import importlib.metadata
 
 import stan.fit
 
 
-def get_plugins() -> Generator[pkg_resources.EntryPoint, None, None]:
+def get_plugins() -> importlib.metadata.EntryPoints:
     """Iterate over available plugins."""
-    return pkg_resources.iter_entry_points(group="stan.plugins")
+    return importlib.metadata.entry_points(group="stan.plugins")
 
 
 class PluginBase(abc.ABC):
