@@ -6,7 +6,7 @@ import typing
 import aiohttp
 import aiohttp.web
 import httpstan.app
-import simdjson
+import orjson
 
 
 def unused_tcp_port():
@@ -22,8 +22,7 @@ class HTTPResponse(typing.NamedTuple):
     content: bytes
 
     def json(self) -> dict:
-        # mypy 0.961 complains that simdjson lacks a `loads`.
-        return simdjson.loads(self.content)  # type: ignore
+        return orjson.loads(self.content)
 
 
 class HttpstanClient:
