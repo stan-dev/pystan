@@ -10,7 +10,7 @@ import httpstan.schemas
 import httpstan.services.arguments as arguments
 import httpstan.utils
 import numpy as np
-import simdjson
+import orjson
 from clikit.io import ConsoleIO
 
 import stan.common
@@ -257,10 +257,10 @@ class Model:
 
             stan_outputs = tuple(stan_outputs)  # Fit constructor expects a tuple.
 
-            def is_nonempty_logger_message(msg: simdjson.Object):
+            def is_nonempty_logger_message(msg: dict):
                 return msg["topic"] == "logger" and msg["values"][0] != "info:"  # type: ignore
 
-            def is_iteration_or_elapsed_time_logger_message(msg: simdjson.Object):
+            def is_iteration_or_elapsed_time_logger_message(msg: dict):
                 # Assumes `msg` is a message with topic `logger`.
                 text = msg["values"][0]  # type: ignore
                 text = cast(str, text)
@@ -271,19 +271,16 @@ class Model:
                     or text.startswith("info:" + " " * 15)
                 )
 
-            parser = simdjson.Parser()
             nonstandard_logger_messages = []
             for stan_output in stan_outputs:
                 for line in stan_output.splitlines():
                     # Do not attempt to parse non-logger messages. Draws could contain nan or inf values.
-                    # simdjson cannot parse lines containing such values.
+                    # orjson cannot parse lines containing such values.
                     if b'"logger"' not in line:
                         continue
-                    msg = parser.parse(line)
+                    msg = orjson.loads(line)
                     if is_nonempty_logger_message(msg) and not is_iteration_or_elapsed_time_logger_message(msg):
-                        nonstandard_logger_messages.append(msg.as_dict())
-                    del msg
-            del parser  # simdjson.Parser is no longer used at this point.
+                        nonstandard_logger_messages.append(msg)
 
             if nonstandard_logger_messages:
                 io.error_line("<comment>Messages received during sampling:</comment>")
